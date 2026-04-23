@@ -1,12 +1,13 @@
 package com.pagely.meetingservice.meeting.domain.model;
 
-import java.time.LocalDateTime;
-import java.util.UUID;
-
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Entity
 @Table(name = "p_meeting")
@@ -15,48 +16,68 @@ public class Meeting {
     @Id
     private UUID id;
 
+    // 모임장 유저 ID
     @Column(name = "host_id", nullable = false)
     private UUID hostId;
 
+    // 연관 도서 ID
     @Column(name = "book_id")
     private UUID bookId;
 
+    // 모임 제목
     @Column(name = "title", nullable = false, length = 20)
     private String title;
 
-    @Column(name = "description", length = 500)
+    // 모임 설명
+    @Column(name = "description")
     private String description;
 
-    @Column(name = "meeting_type", nullable = false, length = 20)
+    // 모임 유형
+    @Enumerated(EnumType.STRING)
+    @Column(name = "meeting_type", nullable = false)
     private MeetingType meetingType;
 
-    @Column(name = "meeting_status", nullable = false, length = 20)
+    // 모임 상태
+    @Enumerated(EnumType.STRING)
+    @Column(name = "meeting_status", nullable = false)
     private MeetingStatus meetingStatus;
 
-    @Column(name = "recruit_status", nullable = false, length = 20)
+    // 모집 상태
+    @Enumerated(EnumType.STRING)
+    @Column(name = "recruit_status", nullable = false)
     private RecruitStatus recruitStatus;
 
+    // 모집 시작 시각
     @Column(name = "recruit_start_at", nullable = false)
-    private LocalDateTime recruitStartDate;
+    private LocalDateTime recruitStartAt;
 
+    // 모집 종료 시각
     @Column(name = "recruit_end_at", nullable = false)
-    private LocalDateTime recruitEndDate;
+    private LocalDateTime recruitEndAt;
 
+    // 최대 모집 인원
     @Column(name = "recruit_max", nullable = false)
     private int recruitMax;
 
-    @Column(name = "reading_level", nullable = false, length = 20)
+    // 독서 난이도
+    @Enumerated(EnumType.STRING)
+    @Column(name = "reading_level", nullable = false)
     private ReadingLevel readingLevel;
 
-    @Column(name = "rule_memo", columnDefinition = "TEXT")
+    // 모임 규칙 메모
+    @Column(name = "rule_memo")
     private String ruleMemo;
 
-    @Column(name = "recruit_rate", nullable = false, length = 20)
+    // 모임 주기
+    @Enumerated(EnumType.STRING)
+    @Column(name = "recruit_rate", nullable = false)
     private RecruitRate recruitRate;
 
+    // 무료/유료 여부
     @Column(name = "free_paid", nullable = false)
     private boolean freePaid;
 
+    // 공통 감사 컬럼
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
@@ -75,33 +96,21 @@ public class Meeting {
     @Column(name = "deleted_by")
     private UUID deletedBy;
 
-    public enum MeetingType {
-        ONES,
-        REGULAR;
+    protected Meeting() {
     }
 
-    public enum MeetingStatus {
-        UPCOMING,
-        IN_PROGRESS,
-        COMPLETED,
-        CANCELLED;
-    }
-
-    public enum RecruitStatus {
-        RECRUITING,
-        FULL,
-        CLOSED;
-    }
-
-    public enum ReadingLevel {
-        BEGINNER,
-        NORMAL,
-        ADVANCED;
-    }
-
-    public enum RecruitRate {
-        WEEKLY,
-        BIWEEKLY,
-        MONTHLY
-    }
+//    // 소프트 삭제 여부 확인
+//    public boolean isDeleted() {
+//        return deletedAt != null;
+//    }
+//
+//    // 모집 가능 여부 확인
+//    public boolean isRecruiting() {
+//        return recruitStatus == RecruitStatus.RECRUITING;
+//    }
+//
+//    // 모임장 여부 확인
+//    public boolean isHost(UUID userId) {
+//        return hostId.equals(userId);
+//    }
 }

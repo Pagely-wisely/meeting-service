@@ -70,7 +70,7 @@ CREATE TYPE attendance_status AS ENUM (
 CREATE TABLE p_meeting (
                            id UUID PRIMARY KEY,
                            host_id UUID NOT NULL,
-                           book_id UUID,
+                           book_id VARCHAR(20),
                            title VARCHAR(20) NOT NULL,
                            description TEXT,
                            meeting_type meeting_type NOT NULL,
