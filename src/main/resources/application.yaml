@@ -1,3 +1,35 @@
+server:
+  port: 19011
+
 spring:
+  config:
+    import: optional:file:meeting-service/.env[.properties]
+
   application:
     name: meetingservice
+
+  datasource:
+    url: jdbc:postgresql://${DB_HOST}:${DB_PORT}/${MEETING_DB_NAME}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+
+logging:
+  level:
+    org.flywaydb: info
+
+eureka:
+  client:
+    enabled: false
+    register-with-eureka: false
+    fetch-registry: false
