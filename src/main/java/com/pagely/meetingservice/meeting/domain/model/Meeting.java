@@ -8,11 +8,9 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
-
 @Entity
 @Table(name = "p_meeting")
 public class Meeting {
-
 
     @Id
     private UUID id;
@@ -64,16 +62,16 @@ public class Meeting {
 
     @Column(name = "created_by", nullable = false, updatable = false)
     private UUID createdBy;
-    
+
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
     @Column(name = "updated_by")
     private UUID updatedBy;
-    
+
     @Column(name = "deleted_at")
     private LocalDateTime deletedAt;
-    
+
     @Column(name = "deleted_by")
     private UUID deletedBy;
 
