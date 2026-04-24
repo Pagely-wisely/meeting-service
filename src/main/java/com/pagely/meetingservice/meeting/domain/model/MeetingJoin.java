@@ -59,18 +59,18 @@ public class MeetingJoin {
     protected MeetingJoin() {
     }
 
-//    // 승인 처리
-//    public void approve(UUID approvedBy) {
-//        this.joinStatus = MeetingJoinStatus.APPROVED;
-//        this.updatedBy = approvedBy;
-//        this.updatedAt = LocalDateTime.now();
-//    }
-//
-//    // 거절 처리
-//    public void reject(String rejectReason, UUID rejectedBy) {
-//        this.joinStatus = MeetingJoinStatus.REJECTED;
-//        this.rejectReason = rejectReason;
-//        this.updatedBy = rejectedBy;
-//        this.updatedAt = LocalDateTime.now();
-//    }
+    // 승인 처리
+    public void approve(UUID approvedBy) {
+        this.joinStatus = MeetingJoinStatus.APPROVED;
+        this.updatedBy = approvedBy;
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    // 거절 처리
+    public void reject(String rejectReason, UUID rejectedBy) {
+        this.joinStatus = MeetingJoinStatus.REJECTED;
+        this.rejectReason = rejectReason;
+        this.updatedBy = rejectedBy;
+        this.updatedAt = LocalDateTime.now();
+    }
 }
