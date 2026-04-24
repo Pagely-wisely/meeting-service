@@ -99,18 +99,18 @@ public class Meeting {
     protected Meeting() {
     }
 
-    // 소프트 삭제 여부 확인
-    public boolean isDeleted() {
-        return deletedAt != null;
-    }
-
-    // 모집 가능 여부 확인
-    public boolean isRecruiting() {
-        return recruitStatus == RecruitStatus.RECRUITING;
-    }
-
-    // 모임장 여부 확인
-    public boolean isHost(UUID userId) {
-        return hostId.equals(userId);
-    }
+//    // 소프트 삭제 여부 확인
+//    public boolean isDeleted() {
+//        return deletedAt != null;
+//    }
+//
+//    // 모집 가능 여부 확인
+//    public boolean isRecruiting() {
+//        return recruitStatus == RecruitStatus.RECRUITING;
+//    }
+//
+//    // 모임장 여부 확인
+//    public boolean isHost(UUID userId) {
+//        return hostId.equals(userId);
+//    }
 }
