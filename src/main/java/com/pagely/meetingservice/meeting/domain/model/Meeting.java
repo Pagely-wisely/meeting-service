@@ -22,7 +22,7 @@ public class Meeting {
 
     // 연관 도서 ID
     @Column(name = "book_id")
-    private UUID bookId;
+    private String bookId;
 
     // 모임 제목
     @Column(name = "title", nullable = false, length = 20)
