@@ -25,7 +25,7 @@ public class Meeting {
     private String bookId;
 
     // 모임 제목
-    @Column(name = "title", nullable = false, length = 20)
+    @Column(name = "title", nullable = false, length = 100)
     private String title;
 
     // 모임 설명
