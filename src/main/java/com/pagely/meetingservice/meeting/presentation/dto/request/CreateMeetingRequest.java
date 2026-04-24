@@ -15,11 +15,11 @@ public record CreateMeetingRequest(
 
         @NotNull UUID hostId,
 
-        UUID bookId,
+        String bookId,
 
         @NotBlank @Size(max = 20) String title,
 
-        @Size(max = 500) String description,
+        String description,
 
         @NotNull MeetingType meetingType, // ONES, REGULAR
 

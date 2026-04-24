@@ -118,7 +118,7 @@ public class Meeting {
     public static Meeting create(
             UUID id,
             UUID hostId,
-            UUID bookId,
+            String bookId,
             String title,
             String description,
             MeetingType meetingType,
@@ -163,7 +163,7 @@ public class Meeting {
         return hostId;
     }
 
-    public UUID getBookId() {
+    public String getBookId() {
         return bookId;
     }
 

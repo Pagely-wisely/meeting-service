@@ -13,7 +13,7 @@ import com.pagely.meetingservice.meeting.domain.model.RecruitStatus;
 public record MeetingResult(
     UUID id,
     UUID hostId,
-    UUID bookId,
+    String bookId,
     String title,
     String description,
     MeetingType meetingType,

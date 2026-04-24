@@ -9,7 +9,7 @@ import com.pagely.meetingservice.meeting.domain.model.RecruitRate;
 
 public record CreateMeetingCommand(
         UUID hostId, // 모임장 ID
-        UUID bookId, // 책 ID
+        String bookId, // 책 ID
         String title, // 모임명
         String description, // 모임 설명
         MeetingType meetingType, // 모임 유형
