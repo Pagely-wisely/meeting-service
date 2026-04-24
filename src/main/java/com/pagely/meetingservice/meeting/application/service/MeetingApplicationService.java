@@ -44,7 +44,7 @@ public class MeetingApplicationService {
             command.createdBy()
         );
         Meeting saved = meetingRepository.save(meeting);
-        return MeetingResult.from(meeting);
+        return MeetingResult.from(saved);
     }
     
 }
