@@ -26,7 +26,7 @@ public class MeetingSchedule {
 
     // 해당 일정의 도서 ID
     @Column(name = "book_id")
-    private UUID bookId;
+    private String bookId;
 
     // 일정 상태
     @Enumerated(EnumType.STRING)
