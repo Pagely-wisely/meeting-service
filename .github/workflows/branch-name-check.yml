@@ -6,6 +6,7 @@ on:
       - main
       - dev
       - init
+      - release
 
 jobs:
   check-branch-name:
