@@ -32,7 +32,7 @@ public class MeetingJoinService {
     // 가입 신청 처리
     @Transactional
     public MeetingJoinResult createMeetingJoin(JoinMeetingCommand command){
-        Meeting meeting = meetingRepository.findById(command.meetingId())
+        Meeting meeting = meetingRepository.findById(command.getMeetingId())
         .orElseThrow(() -> new IllegalArgumentException("모임이 존재하지 않습니다"));
     
 
@@ -42,24 +42,14 @@ public class MeetingJoinService {
     }
 
     // 중복 신청 여부 검사
-    if(meetingJoinRepository.existsByMeetingIdAndRecruitUserId(command.meetingId(), command.recruitUserId())){
+    if(meetingJoinRepository.existsByMeetingIdAndRecruitUserId(command.getMeetingId(), command.getRecruitUserId())){
         throw new IllegalStateException("이미 가입 신청한 모임입니다.");
     }
 
     UUID joinId = UUID.randomUUID();
     LocalDateTime now = LocalDateTime.now();
-    MeetingJoin join = MeetingJoin.create(
-        joinId,
-        command.meetingId(),
-        command.recruitUserId(),
-        command.content(),
-        now,
-        command.createdBy()
-    );
-
+    MeetingJoin join = command.toMeetingJoin(joinId, now);
     MeetingJoin saved = meetingJoinRepository.save(join);
     return MeetingJoinResult.from(saved);
-
 }
 }
-

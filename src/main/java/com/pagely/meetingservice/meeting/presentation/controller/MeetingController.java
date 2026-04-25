@@ -1,13 +1,11 @@
 package com.pagely.meetingservice.meeting.presentation.controller;
 
-import com.pagely.meetingservice.meeting.application.dto.command.CreateMeetingCommand;
-import com.pagely.meetingservice.meeting.application.dto.command.JoinMeetingCommand;
-import com.pagely.meetingservice.meeting.application.dto.result.MeetingJoinResult;
 import com.pagely.meetingservice.meeting.application.dto.result.MeetingResult;
+import com.pagely.meetingservice.meeting.application.dto.result.MeetingJoinResult;
 import com.pagely.meetingservice.meeting.application.dto.result.MeetingSummaryResult;
-import com.pagely.meetingservice.meeting.application.service.MeetingService;
 import com.pagely.meetingservice.meeting.application.service.MeetingJoinService;
 import com.pagely.meetingservice.meeting.application.service.MeetingQueryService;
+import com.pagely.meetingservice.meeting.application.service.MeetingService;
 import com.pagely.meetingservice.meeting.presentation.dto.request.CreateMeetingRequest;
 import com.pagely.meetingservice.meeting.presentation.dto.request.JoinMeetingRequest;
 import com.pagely.meetingservice.meeting.presentation.dto.response.MeetingJoinResponse;
@@ -32,35 +30,17 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/v1/meetings")
 public class MeetingController {
 
-    private final MeetingService meetingApplicationService;
+    private final MeetingService meetingService;
     private final MeetingQueryService meetingQueryService;
     private final MeetingJoinService meetingJoinService;
 
     // 모임 생성
     @PostMapping
     public ResponseEntity<MeetingResponse> createMeeting(
-            @Valid @RequestBody CreateMeetingRequest req
-    ) {
-        CreateMeetingCommand command = new CreateMeetingCommand(
-                req.hostId(),
-                req.bookId(),
-                req.title(),
-                req.description(),
-                req.meetingType(),
-                req.recruitStartAt(),
-                req.recruitEndAt(),
-                req.recruitMax(),
-                req.readingLevel(),
-                req.ruleMemo(),
-                req.recruitRate(),
-                req.freePaid(),
-                req.hostId() // TODO: createdBy를 hostId로 사용
-        );
-
-        MeetingResult result = meetingApplicationService.createMeeting(command);
+            @Valid @RequestBody CreateMeetingRequest req) {
+        MeetingResult result = meetingService.createMeeting(req.toCommand(req.getHostId()));
         MeetingResponse response = MeetingResponse.from(result);
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(response);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     // 모임 전체 조회
@@ -86,14 +66,11 @@ public class MeetingController {
             @PathVariable UUID meetingId,
             @Valid @RequestBody JoinMeetingRequest req
     ) {
-        JoinMeetingCommand command = new JoinMeetingCommand(
-                meetingId,
-                req.recruitUserId(),
-                req.content(),
-                req.recruitUserId()
-        );
-        MeetingJoinResult result = meetingJoinService.createMeetingJoin(command);
+        MeetingJoinResult result = meetingJoinService.createMeetingJoin(
+                req.toCommand(meetingId, req.getRecruitUserId()));
         MeetingJoinResponse response = MeetingJoinResponse.from(result);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
+
+    ;
 }

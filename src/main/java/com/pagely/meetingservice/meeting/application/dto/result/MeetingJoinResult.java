@@ -6,26 +6,33 @@ import java.util.UUID;
 import com.pagely.meetingservice.meeting.domain.model.MeetingJoin;
 import com.pagely.meetingservice.meeting.domain.model.MeetingJoinStatus;
 
+import lombok.Getter;
+import lombok.Builder;
+import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
 
-// 가입 신청 결과 레코드 
-public record MeetingJoinResult(
-    UUID id,
-    UUID meetingId,
-    UUID recruitUserId,
-    MeetingJoinStatus joinStatus,
-    String content,
-    LocalDateTime createdAt,
-    UUID createdBy
-) {
+@Getter
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class MeetingJoinResult{ // 가입 신청 결과 레코드
+    private UUID id;
+    private UUID meetingId;
+    private UUID recruitUserId;
+    private MeetingJoinStatus joinStatus;
+    private String content;
+    private LocalDateTime createdAt;
+    private UUID createdBy;
+
     public static MeetingJoinResult from(MeetingJoin join) { // 엔티티 → 결과 DTO 변환
-        return new MeetingJoinResult(
-            join.getId(),
-            join.getMeetingId(),
-            join.getRecruitUserId(),
-            join.getJoinStatus(),
-            join.getContent(),
-            join.getCreatedAt(),
-            join.getCreatedBy()
-        );
+        return MeetingJoinResult.builder()
+            .id(join.getId())
+            .meetingId(join.getMeetingId())
+            .recruitUserId(join.getRecruitUserId())
+            .joinStatus(join.getJoinStatus())
+            .content(join.getContent())
+            .createdAt(join.getCreatedAt())
+            .createdBy(join.getCreatedBy())
+            .build();
     }
 }

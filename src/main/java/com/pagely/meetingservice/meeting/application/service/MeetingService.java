@@ -10,39 +10,20 @@ import com.pagely.meetingservice.meeting.application.dto.command.CreateMeetingCo
 import com.pagely.meetingservice.meeting.application.dto.result.MeetingResult;
 import com.pagely.meetingservice.meeting.domain.model.Meeting;
 import com.pagely.meetingservice.meeting.domain.repository.MeetingRepository;
-
+import lombok.RequiredArgsConstructor;
 
 @Service
+@RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class MeetingService {
 
     private final MeetingRepository meetingRepository;
 
-    public MeetingService(MeetingRepository meetingRepository) {
-        this.meetingRepository = meetingRepository;
-    }
-
     @Transactional
     public MeetingResult createMeeting(CreateMeetingCommand command) {
         UUID meetingId = UUID.randomUUID();
         LocalDateTime now = LocalDateTime.now();
-        Meeting meeting = Meeting.create(
-            meetingId,
-            command.hostId(),
-            command.bookId(),
-            command.title(),
-            command.description(),
-            command.meetingType(),
-            command.recruitStartAt(),
-            command.recruitEndAt(),
-            command.recruitMax(),
-            command.readingLevel(),
-            command.ruleMemo(),
-            command.recruitRate(),
-            command.freePaid(),
-            now,
-            command.createdBy()
-        );
+        Meeting meeting = command.toMeeting(meetingId, now);
         Meeting saved = meetingRepository.save(meeting);
         return MeetingResult.from(saved);
     }
