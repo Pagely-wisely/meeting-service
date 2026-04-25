@@ -9,6 +9,8 @@ import jakarta.persistence.Table;
 import java.time.LocalDateTime;
 import java.util.UUID;
 import lombok.Getter;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 @Getter
 @Entity
@@ -36,17 +38,20 @@ public class Meeting {
 
     // 모임 유형
     @Enumerated(EnumType.STRING)
-    @Column(name = "meeting_type", nullable = false)
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
+    @Column(name = "meeting_type", nullable = false, columnDefinition = "meeting_type")
     private MeetingType meetingType;
 
     // 모임 상태
     @Enumerated(EnumType.STRING)
-    @Column(name = "meeting_status", nullable = false)
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
+    @Column(name = "meeting_status", nullable = false, columnDefinition = "meeting_status")
     private MeetingStatus meetingStatus;
 
     // 모집 상태
     @Enumerated(EnumType.STRING)
-    @Column(name = "recruit_status", nullable = false)
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
+    @Column(name = "recruit_status", nullable = false, columnDefinition = "recruit_status")
     private RecruitStatus recruitStatus;
 
     // 모집 시작 시각
@@ -63,7 +68,8 @@ public class Meeting {
 
     // 독서 난이도
     @Enumerated(EnumType.STRING)
-    @Column(name = "reading_level", nullable = false)
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
+    @Column(name = "reading_level", nullable = false, columnDefinition = "reading_level")
     private ReadingLevel readingLevel;
 
     // 모임 규칙 메모
@@ -72,7 +78,8 @@ public class Meeting {
 
     // 모임 주기
     @Enumerated(EnumType.STRING)
-    @Column(name = "recruit_rate", nullable = false)
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
+    @Column(name = "recruit_rate", nullable = false, columnDefinition = "recruit_rate")
     private RecruitRate recruitRate;
 
     // 무료/유료 여부
