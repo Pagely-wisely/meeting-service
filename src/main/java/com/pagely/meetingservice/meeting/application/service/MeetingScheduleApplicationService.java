@@ -26,9 +26,9 @@ public class MeetingScheduleApplicationService {
                 .orElseThrow(() -> new IllegalArgumentException("모임이 존재하지 않습니다."));
 
         // TODO: 인증 컨텍스트 연결 후 모임장 권한 검증
-        if (!meeting.getHostId().equals(command.createdBy())) {
-            throw new IllegalArgumentException("모임장만 일정을 생성할 수 있습니다.");
-        }
+//        if (!meeting.getHostId().equals(...) {
+//            throw new IllegalArgumentException("모임장만 일정을 생성할 수 있습니다.");
+//        }
 
         int nextScheduleNumber = calculateNextScheduleNumber(command.meetingId());
 
