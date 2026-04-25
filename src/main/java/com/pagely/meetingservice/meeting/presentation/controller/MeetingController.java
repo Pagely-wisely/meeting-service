@@ -1,11 +1,16 @@
 package com.pagely.meetingservice.meeting.presentation.controller;
 
 import com.pagely.meetingservice.meeting.application.dto.command.CreateMeetingCommand;
+import com.pagely.meetingservice.meeting.application.dto.command.JoinMeetingCommand;
+import com.pagely.meetingservice.meeting.application.dto.result.MeetingJoinResult;
 import com.pagely.meetingservice.meeting.application.dto.result.MeetingResult;
 import com.pagely.meetingservice.meeting.application.dto.result.MeetingSummaryResult;
-import com.pagely.meetingservice.meeting.application.service.MeetingApplicationService;
+import com.pagely.meetingservice.meeting.application.service.MeetingService;
+import com.pagely.meetingservice.meeting.application.service.MeetingJoinService;
 import com.pagely.meetingservice.meeting.application.service.MeetingQueryService;
 import com.pagely.meetingservice.meeting.presentation.dto.request.CreateMeetingRequest;
+import com.pagely.meetingservice.meeting.presentation.dto.request.JoinMeetingRequest;
+import com.pagely.meetingservice.meeting.presentation.dto.response.MeetingJoinResponse;
 import com.pagely.meetingservice.meeting.presentation.dto.response.MeetingResponse;
 import com.pagely.meetingservice.meeting.presentation.dto.response.MeetingSummaryResponse;
 import jakarta.validation.Valid;
@@ -27,8 +32,9 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/v1/meetings")
 public class MeetingController {
 
-    private final MeetingApplicationService meetingApplicationService;
+    private final MeetingService meetingApplicationService;
     private final MeetingQueryService meetingQueryService;
+    private final MeetingJoinService meetingJoinService;
 
     // 모임 생성
     @PostMapping
@@ -48,12 +54,13 @@ public class MeetingController {
                 req.ruleMemo(),
                 req.recruitRate(),
                 req.freePaid(),
-                req.hostId() // 임시: createdBy를 hostId로 사용
+                req.hostId() // TODO: createdBy를 hostId로 사용
         );
 
         MeetingResult result = meetingApplicationService.createMeeting(command);
+        MeetingResponse response = MeetingResponse.from(result);
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(MeetingResponse.from(result));
+                .body(response);
     }
 
     // 모임 전체 조회
@@ -71,5 +78,22 @@ public class MeetingController {
     public MeetingResponse getMeeting(@PathVariable UUID meetingId) {
         MeetingResult result = meetingQueryService.getMeeting(meetingId);
         return MeetingResponse.from(result);
+    }
+
+    // 모임 가입 신청
+    @PostMapping("/{meetingId}/join")
+    public ResponseEntity<MeetingJoinResponse> joinMeeting(
+            @PathVariable UUID meetingId,
+            @Valid @RequestBody JoinMeetingRequest req
+    ) {
+        JoinMeetingCommand command = new JoinMeetingCommand(
+                meetingId,
+                req.recruitUserId(),
+                req.content(),
+                req.recruitUserId()
+        );
+        MeetingJoinResult result = meetingJoinService.createMeetingJoin(command);
+        MeetingJoinResponse response = MeetingJoinResponse.from(result);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 }

@@ -14,11 +14,11 @@ import com.pagely.meetingservice.meeting.domain.repository.MeetingRepository;
 
 @Service
 @Transactional(readOnly = true)
-public class MeetingApplicationService {
+public class MeetingService {
 
     private final MeetingRepository meetingRepository;
 
-    public MeetingApplicationService(MeetingRepository meetingRepository) {
+    public MeetingService(MeetingRepository meetingRepository) {
         this.meetingRepository = meetingRepository;
     }
 
