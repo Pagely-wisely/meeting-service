@@ -8,7 +8,9 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.time.LocalDateTime;
 import java.util.UUID;
+import lombok.Getter;
 
+@Getter
 @Entity
 @Table(name = "p_meeting")
 public class Meeting {
@@ -77,44 +79,34 @@ public class Meeting {
     @Column(name = "free_paid", nullable = false)
     private boolean freePaid;
 
-    // 공통 감사 컬럼
+    // 생성 시각
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
+    // 생성자 ID
     @Column(name = "created_by", nullable = false, updatable = false)
     private UUID createdBy;
 
+    // 수정 시각
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
+    // 수정자 ID
     @Column(name = "updated_by")
     private UUID updatedBy;
 
+    // 삭제 시각
     @Column(name = "deleted_at")
     private LocalDateTime deletedAt;
 
+    // 삭제자 ID
     @Column(name = "deleted_by")
     private UUID deletedBy;
 
     protected Meeting() {
     }
 
-    // // 소프트 삭제 여부 확인
-    // public boolean isDeleted() {
-    // return deletedAt != null;
-    // }
-    //
-    // // 모집 가능 여부 확인
-    // public boolean isRecruiting() {
-    // return recruitStatus == RecruitStatus.RECRUITING;
-    // }
-    //
-    // // 모임장 여부 확인
-    // public boolean isHost(UUID userId) {
-    // return hostId.equals(userId);
-    // }
-
-    // 신규 모임 생성 (문서: 생성 직후 UPCOMING / RECRUITING)
+    // 신규 모임 생성
     public static Meeting create(
             UUID id,
             UUID hostId,
@@ -130,10 +122,12 @@ public class Meeting {
             RecruitRate recruitRate,
             boolean freePaid,
             LocalDateTime createdAt,
-            UUID createdBy) {
+            UUID createdBy
+    ) {
         if (recruitStartAt.isAfter(recruitEndAt)) {
             throw new IllegalArgumentException("모집 시작 시각은 종료 시각보다 늦을 수 없습니다.");
         }
+
         Meeting meeting = new Meeting();
         meeting.id = id;
         meeting.hostId = hostId;

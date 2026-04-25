@@ -2,11 +2,11 @@ server:
   port: 19011
 
 spring:
-  config:
-    import: optional:file:meeting-service/.env[.properties]
-
   application:
     name: meetingservice
+
+  config:
+    import: optional:classpath:/.env[.properties]
 
   datasource:
     url: jdbc:postgresql://${DB_HOST}:${DB_PORT}/${MEETING_DB_NAME}
