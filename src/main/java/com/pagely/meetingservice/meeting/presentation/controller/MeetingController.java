@@ -5,9 +5,10 @@ import com.pagely.meetingservice.meeting.application.dto.command.CreateMeetingSc
 import com.pagely.meetingservice.meeting.application.dto.result.MeetingResult;
 import com.pagely.meetingservice.meeting.application.dto.result.MeetingScheduleResult;
 import com.pagely.meetingservice.meeting.application.dto.result.MeetingSummaryResult;
-import com.pagely.meetingservice.meeting.application.service.MeetingApplicationService;
+import com.pagely.meetingservice.meeting.application.service.MeetingCommandService;
 import com.pagely.meetingservice.meeting.application.service.MeetingQueryService;
-import com.pagely.meetingservice.meeting.application.service.MeetingScheduleApplicationService;
+import com.pagely.meetingservice.meeting.application.service.MeetingScheduleCommandService;
+import com.pagely.meetingservice.meeting.application.service.MeetingScheduleQueryService;
 import com.pagely.meetingservice.meeting.presentation.dto.request.CreateMeetingRequest;
 import com.pagely.meetingservice.meeting.presentation.dto.request.CreateMeetingScheduleRequest;
 import com.pagely.meetingservice.meeting.presentation.dto.response.MeetingResponse;
@@ -32,9 +33,10 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/v1/meetings")
 public class MeetingController {
 
-    private final MeetingApplicationService meetingApplicationService;
+    private final MeetingCommandService meetingCommandService;
     private final MeetingQueryService meetingQueryService;
-    private final MeetingScheduleApplicationService meetingScheduleApplicationService;
+    private final MeetingScheduleCommandService meetingScheduleCommandService;
+    private final MeetingScheduleQueryService meetingScheduleQueryService;
 
     // 모임 생성
     @PostMapping
@@ -58,7 +60,7 @@ public class MeetingController {
                 req.hostId() // 임시: createdBy를 hostId로 사용
         );
 
-        MeetingResult result = meetingApplicationService.createMeeting(command);
+        MeetingResult result = meetingCommandService.createMeeting(command);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(MeetingResponse.from(result));
     }
@@ -95,9 +97,32 @@ public class MeetingController {
                 UUID.fromString("00000000-0000-0000-0000-000000000001")
         );
 
-        MeetingScheduleResult result = meetingScheduleApplicationService.createSchedule(command);
+        MeetingScheduleResult result = meetingScheduleCommandService.createSchedule(command);
 
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(MeetingScheduleResponse.from(result));
+    }
+
+    // 모임 일정 목록 조회
+    @GetMapping("/{meetingId}/schedules")
+    public List<MeetingScheduleResponse> getMeetingSchedules(
+            @PathVariable UUID meetingId
+    ) {
+        List<MeetingScheduleResult> results = meetingScheduleQueryService.getSchedules(meetingId);
+
+        return results.stream()
+                .map(MeetingScheduleResponse::from)
+                .toList();
+    }
+
+    // 모임 일정 상세 조회
+    @GetMapping("/{meetingId}/schedules/{scheduleId}")
+    public MeetingScheduleResponse getMeetingSchedule(
+            @PathVariable UUID meetingId,
+            @PathVariable UUID scheduleId
+    ) {
+        MeetingScheduleResult result = meetingScheduleQueryService.getSchedule(meetingId, scheduleId);
+
+        return MeetingScheduleResponse.from(result);
     }
 }

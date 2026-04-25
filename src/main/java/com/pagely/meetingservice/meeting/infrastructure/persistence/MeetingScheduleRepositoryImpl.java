@@ -57,4 +57,19 @@ public class MeetingScheduleRepositoryImpl implements MeetingScheduleRepository 
     public boolean existsByMeetingIdAndScheduleNumber(UUID meetingId, int scheduleNumber) {
         return meetingScheduleJpaRepository.existsByMeetingIdAndScheduleNumber(meetingId, scheduleNumber);
     }
+
+    // 특정 모임의 삭제되지 않은 일정 목록 조회
+    @Override
+    public List<MeetingSchedule> findByMeetingIdAndDeletedAtIsNullOrderByScheduleNumberAsc(UUID meetingId) {
+        return meetingScheduleJpaRepository.findByMeetingIdAndDeletedAtIsNullOrderByScheduleNumberAsc(meetingId);
+    }
+
+    // 특정 모임의 삭제되지 않은 일정 상세 조회
+    @Override
+    public Optional<MeetingSchedule> findByIdAndMeetingIdAndDeletedAtIsNull(
+            UUID scheduleId,
+            UUID meetingId
+    ) {
+        return meetingScheduleJpaRepository.findByIdAndMeetingIdAndDeletedAtIsNull(scheduleId, meetingId);
+    }
 }

@@ -14,7 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
-public class MeetingScheduleApplicationService {
+public class MeetingScheduleCommandService {
 
     private final MeetingRepository meetingRepository;
     private final MeetingScheduleRepository meetingScheduleRepository;
