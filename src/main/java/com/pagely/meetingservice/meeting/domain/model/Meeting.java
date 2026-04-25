@@ -79,40 +79,141 @@ public class Meeting {
     @Column(name = "free_paid", nullable = false)
     private boolean freePaid;
 
-    // 공통 감사 컬럼
+    // 생성 시각
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
+    // 생성자 ID
     @Column(name = "created_by", nullable = false, updatable = false)
     private UUID createdBy;
 
+    // 수정 시각
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
+    // 수정자 ID
     @Column(name = "updated_by")
     private UUID updatedBy;
 
+    // 삭제 시각
     @Column(name = "deleted_at")
     private LocalDateTime deletedAt;
 
+    // 삭제자 ID
     @Column(name = "deleted_by")
     private UUID deletedBy;
 
     protected Meeting() {
     }
 
-//    // 소프트 삭제 여부 확인
-//    public boolean isDeleted() {
-//        return deletedAt != null;
-//    }
-//
-//    // 모집 가능 여부 확인
-//    public boolean isRecruiting() {
-//        return recruitStatus == RecruitStatus.RECRUITING;
-//    }
-//
-//    // 모임장 여부 확인
-//    public boolean isHost(UUID userId) {
-//        return hostId.equals(userId);
-//    }
+    // 신규 모임 생성
+    public static Meeting create(
+            UUID id,
+            UUID hostId,
+            String bookId,
+            String title,
+            String description,
+            MeetingType meetingType,
+            LocalDateTime recruitStartAt,
+            LocalDateTime recruitEndAt,
+            int recruitMax,
+            ReadingLevel readingLevel,
+            String ruleMemo,
+            RecruitRate recruitRate,
+            boolean freePaid,
+            LocalDateTime createdAt,
+            UUID createdBy
+    ) {
+        if (recruitStartAt.isAfter(recruitEndAt)) {
+            throw new IllegalArgumentException("모집 시작 시각은 종료 시각보다 늦을 수 없습니다.");
+        }
+
+        Meeting meeting = new Meeting();
+        meeting.id = id;
+        meeting.hostId = hostId;
+        meeting.bookId = bookId;
+        meeting.title = title;
+        meeting.description = description;
+        meeting.meetingType = meetingType;
+        meeting.meetingStatus = MeetingStatus.UPCOMING;
+        meeting.recruitStatus = RecruitStatus.RECRUITING;
+        meeting.recruitStartAt = recruitStartAt;
+        meeting.recruitEndAt = recruitEndAt;
+        meeting.recruitMax = recruitMax;
+        meeting.readingLevel = readingLevel;
+        meeting.ruleMemo = ruleMemo;
+        meeting.recruitRate = recruitRate;
+        meeting.freePaid = freePaid;
+        meeting.createdAt = createdAt;
+        meeting.createdBy = createdBy;
+        return meeting;
+    }
+
+    public UUID getId() {
+        return id;
+    }
+
+    public UUID getHostId() {
+        return hostId;
+    }
+
+    public String getBookId() {
+        return bookId;
+    }
+
+    public String getTitle() {
+        return title;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public MeetingType getMeetingType() {
+        return meetingType;
+    }
+
+    public MeetingStatus getMeetingStatus() {
+        return meetingStatus;
+    }
+
+    public RecruitStatus getRecruitStatus() {
+        return recruitStatus;
+    }
+
+    public LocalDateTime getRecruitStartAt() {
+        return recruitStartAt;
+    }
+
+    public LocalDateTime getRecruitEndAt() {
+        return recruitEndAt;
+    }
+
+    public int getRecruitMax() {
+        return recruitMax;
+    }
+
+    public ReadingLevel getReadingLevel() {
+        return readingLevel;
+    }
+
+    public String getRuleMemo() {
+        return ruleMemo;
+    }
+
+    public RecruitRate getRecruitRate() {
+        return recruitRate;
+    }
+
+    public boolean isFreePaid() {
+        return freePaid;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public UUID getCreatedBy() {
+        return createdBy;
+    }
 }
