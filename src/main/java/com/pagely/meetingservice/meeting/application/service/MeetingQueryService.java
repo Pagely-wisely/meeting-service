@@ -26,6 +26,7 @@ public class MeetingQueryService {
 
     // 모임 상세 조회
     public MeetingResult getMeeting(UUID meetingId) {
+        // TODO: 에러처리
         Meeting meeting = meetingRepository.findById(meetingId)
                 .orElseThrow(() -> new IllegalArgumentException("모임이 존재하지 않습니다"));
 

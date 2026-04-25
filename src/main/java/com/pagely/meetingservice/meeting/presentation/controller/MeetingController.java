@@ -36,6 +36,7 @@ public class MeetingController {
             @Valid @RequestBody CreateMeetingRequest req
     ) {
         CreateMeetingCommand command = new CreateMeetingCommand(
+                // TODO: 인증 컨텍스트 연결
                 req.hostId(),
                 req.bookId(),
                 req.title(),

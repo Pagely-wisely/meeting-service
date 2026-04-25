@@ -124,7 +124,12 @@ public class Meeting {
             LocalDateTime createdAt,
             UUID createdBy
     ) {
+        if (recruitMax <= 0) {
+            // TODO: 에러처리
+            throw new IllegalArgumentException("모집 인원은 1명 이상이어야 합니다.");
+        }
         if (recruitStartAt.isAfter(recruitEndAt)) {
+            // TODO: 에러처리
             throw new IllegalArgumentException("모집 시작 시각은 종료 시각보다 늦을 수 없습니다.");
         }
 
