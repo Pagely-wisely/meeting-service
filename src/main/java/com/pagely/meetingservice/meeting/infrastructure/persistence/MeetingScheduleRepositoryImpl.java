@@ -72,4 +72,5 @@ public class MeetingScheduleRepositoryImpl implements MeetingScheduleRepository 
     ) {
         return meetingScheduleJpaRepository.findByIdAndMeetingIdAndDeletedAtIsNull(scheduleId, meetingId);
     }
+
 }

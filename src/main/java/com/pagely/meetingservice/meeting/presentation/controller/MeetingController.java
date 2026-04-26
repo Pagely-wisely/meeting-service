@@ -1,16 +1,19 @@
 package com.pagely.meetingservice.meeting.presentation.controller;
 
-import com.pagely.meetingservice.meeting.application.dto.command.CreateMeetingCommand;
 import com.pagely.meetingservice.meeting.application.dto.command.CreateMeetingScheduleCommand;
+import com.pagely.meetingservice.meeting.application.dto.result.MeetingJoinResult;
 import com.pagely.meetingservice.meeting.application.dto.result.MeetingResult;
 import com.pagely.meetingservice.meeting.application.dto.result.MeetingScheduleResult;
 import com.pagely.meetingservice.meeting.application.dto.result.MeetingSummaryResult;
 import com.pagely.meetingservice.meeting.application.service.MeetingCommandService;
+import com.pagely.meetingservice.meeting.application.service.MeetingJoinService;
 import com.pagely.meetingservice.meeting.application.service.MeetingQueryService;
 import com.pagely.meetingservice.meeting.application.service.MeetingScheduleCommandService;
 import com.pagely.meetingservice.meeting.application.service.MeetingScheduleQueryService;
 import com.pagely.meetingservice.meeting.presentation.dto.request.CreateMeetingRequest;
 import com.pagely.meetingservice.meeting.presentation.dto.request.CreateMeetingScheduleRequest;
+import com.pagely.meetingservice.meeting.presentation.dto.request.JoinMeetingRequest;
+import com.pagely.meetingservice.meeting.presentation.dto.response.MeetingJoinResponse;
 import com.pagely.meetingservice.meeting.presentation.dto.response.MeetingResponse;
 import com.pagely.meetingservice.meeting.presentation.dto.response.MeetingScheduleResponse;
 import com.pagely.meetingservice.meeting.presentation.dto.response.MeetingSummaryResponse;
@@ -35,6 +38,7 @@ public class MeetingController {
 
     private final MeetingCommandService meetingCommandService;
     private final MeetingQueryService meetingQueryService;
+    private final MeetingJoinService meetingJoinService;
     private final MeetingScheduleCommandService meetingScheduleCommandService;
     private final MeetingScheduleQueryService meetingScheduleQueryService;
 
@@ -43,24 +47,10 @@ public class MeetingController {
     public ResponseEntity<MeetingResponse> createMeeting(
             @Valid @RequestBody CreateMeetingRequest req
     ) {
-        CreateMeetingCommand command = new CreateMeetingCommand(
-                // TODO: 인증 컨텍스트 연결
-                req.hostId(),
-                req.bookId(),
-                req.title(),
-                req.description(),
-                req.meetingType(),
-                req.recruitStartAt(),
-                req.recruitEndAt(),
-                req.recruitMax(),
-                req.readingLevel(),
-                req.ruleMemo(),
-                req.recruitRate(),
-                req.freePaid(),
-                req.hostId() // 임시: createdBy를 hostId로 사용
+        MeetingResult result = meetingCommandService.createMeeting(
+                req.toCommand(req.getHostId()) // DTO → Command 변환
         );
 
-        MeetingResult result = meetingCommandService.createMeeting(command);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(MeetingResponse.from(result));
     }
@@ -80,6 +70,20 @@ public class MeetingController {
     public MeetingResponse getMeeting(@PathVariable UUID meetingId) {
         MeetingResult result = meetingQueryService.getMeeting(meetingId);
         return MeetingResponse.from(result);
+    }
+
+    // 모임 가입 신청
+    @PostMapping("/{meetingId}/join")
+    public ResponseEntity<MeetingJoinResponse> joinMeeting(
+            @PathVariable UUID meetingId,
+            @Valid @RequestBody JoinMeetingRequest req
+    ) {
+        MeetingJoinResult result = meetingJoinService.createMeetingJoin(
+                req.toCommand(meetingId, req.getRecruitUserId())
+        );
+
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(MeetingJoinResponse.from(result));
     }
 
     // 모임 일정 생성
