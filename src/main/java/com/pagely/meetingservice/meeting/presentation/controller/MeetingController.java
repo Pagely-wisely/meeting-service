@@ -1,7 +1,10 @@
 package com.pagely.meetingservice.meeting.presentation.controller;
 
-import com.pagely.meetingservice.meeting.application.dto.result.MeetingResult;
 import com.pagely.meetingservice.meeting.application.dto.result.MeetingJoinResult;
+import com.pagely.meetingservice.meeting.application.dto.command.CreateMeetingCommand;
+import com.pagely.meetingservice.meeting.application.dto.command.CreateMeetingScheduleCommand;
+import com.pagely.meetingservice.meeting.application.dto.result.MeetingResult;
+import com.pagely.meetingservice.meeting.application.dto.result.MeetingScheduleResult;
 import com.pagely.meetingservice.meeting.application.dto.result.MeetingSummaryResult;
 import com.pagely.meetingservice.meeting.application.service.MeetingJoinService;
 import com.pagely.meetingservice.meeting.application.service.MeetingQueryService;
@@ -9,7 +12,11 @@ import com.pagely.meetingservice.meeting.application.service.MeetingService;
 import com.pagely.meetingservice.meeting.presentation.dto.request.CreateMeetingRequest;
 import com.pagely.meetingservice.meeting.presentation.dto.request.JoinMeetingRequest;
 import com.pagely.meetingservice.meeting.presentation.dto.response.MeetingJoinResponse;
+import com.pagely.meetingservice.meeting.application.service.MeetingScheduleApplicationService;
+import com.pagely.meetingservice.meeting.presentation.dto.request.CreateMeetingRequest;
+import com.pagely.meetingservice.meeting.presentation.dto.request.CreateMeetingScheduleRequest;
 import com.pagely.meetingservice.meeting.presentation.dto.response.MeetingResponse;
+import com.pagely.meetingservice.meeting.presentation.dto.response.MeetingScheduleResponse;
 import com.pagely.meetingservice.meeting.presentation.dto.response.MeetingSummaryResponse;
 import jakarta.validation.Valid;
 import java.util.List;
@@ -33,6 +40,7 @@ public class MeetingController {
     private final MeetingService meetingService;
     private final MeetingQueryService meetingQueryService;
     private final MeetingJoinService meetingJoinService;
+    private final MeetingScheduleApplicationService meetingScheduleApplicationService;
 
     // 모임 생성
     @PostMapping
@@ -73,4 +81,24 @@ public class MeetingController {
     }
 
     ;
+    // 모임 일정 생성
+    @PostMapping("/{meetingId}/schedules")
+    public ResponseEntity<MeetingScheduleResponse> createMeetingSchedule(
+            @PathVariable UUID meetingId,
+            @Valid @RequestBody CreateMeetingScheduleRequest req
+    ) {
+        CreateMeetingScheduleCommand command = new CreateMeetingScheduleCommand(
+                meetingId,
+                req.bookId(),
+                req.startAt(),
+                req.discussionNote(),
+                // TODO: 인증 컨텍스트 연결 후 현재 로그인 사용자 ID로 변경
+                UUID.fromString("00000000-0000-0000-0000-000000000001")
+        );
+
+        MeetingScheduleResult result = meetingScheduleApplicationService.createSchedule(command);
+
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(MeetingScheduleResponse.from(result));
+    }
 }

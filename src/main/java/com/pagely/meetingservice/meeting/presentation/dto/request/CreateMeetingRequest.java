@@ -1,5 +1,8 @@
 package com.pagely.meetingservice.meeting.presentation.dto.request;
 
+import com.pagely.meetingservice.meeting.domain.model.MeetingType;
+import com.pagely.meetingservice.meeting.domain.model.ReadingLevel;
+import com.pagely.meetingservice.meeting.domain.model.RecruitRate;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
@@ -32,7 +35,7 @@ public class CreateMeetingRequest {
         @NotBlank @Size(max = 20)
         private String title;
 
-        private String description;
+        @NotBlank @Size(max = 100) String title,
 
         @NotNull
         private MeetingType meetingType; // ONES, REGULAR
