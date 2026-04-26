@@ -1,5 +1,8 @@
 package com.pagely.meetingservice.meeting.presentation.dto.request;
 
+import com.pagely.meetingservice.meeting.domain.model.MeetingType;
+import com.pagely.meetingservice.meeting.domain.model.ReadingLevel;
+import com.pagely.meetingservice.meeting.domain.model.RecruitRate;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
@@ -7,17 +10,13 @@ import jakarta.validation.constraints.Size;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-import com.pagely.meetingservice.meeting.domain.model.MeetingType;
-import com.pagely.meetingservice.meeting.domain.model.ReadingLevel;
-import com.pagely.meetingservice.meeting.domain.model.RecruitRate;
-
 public record CreateMeetingRequest(
 
         @NotNull UUID hostId,
 
         String bookId,
 
-        @NotBlank @Size(max = 20) String title,
+        @NotBlank @Size(max = 100) String title,
 
         String description,
 
