@@ -9,6 +9,9 @@ import com.pagely.meetingservice.meeting.domain.model.MeetingMemberRole;
 import com.pagely.meetingservice.meeting.domain.model.MeetingMemberStatus;
 import com.pagely.meetingservice.meeting.domain.repository.MeetingMemberRepository;
 
+import org.springframework.stereotype.Repository;
+
+@Repository
 public class MeetingMemberRepositoryAdapter implements MeetingMemberRepository {
 
     private final JpaMeetingMemberRepository jpaMeetingMemberRepository;
