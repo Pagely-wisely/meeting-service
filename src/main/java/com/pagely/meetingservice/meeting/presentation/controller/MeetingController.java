@@ -7,6 +7,7 @@ import com.pagely.meetingservice.meeting.application.dto.result.MeetingResult;
 import com.pagely.meetingservice.meeting.application.dto.result.MeetingScheduleResult;
 import com.pagely.meetingservice.meeting.application.dto.result.MeetingSummaryResult;
 import com.pagely.meetingservice.meeting.application.service.MeetingAttendanceCommandService;
+import com.pagely.meetingservice.meeting.application.service.MeetingAttendanceQueryService;
 import com.pagely.meetingservice.meeting.application.service.MeetingCommandService;
 import com.pagely.meetingservice.meeting.application.service.MeetingJoinService;
 import com.pagely.meetingservice.meeting.application.service.MeetingQueryService;
@@ -45,6 +46,7 @@ public class MeetingController {
     private final MeetingScheduleCommandService meetingScheduleCommandService;
     private final MeetingScheduleQueryService meetingScheduleQueryService;
     private final MeetingAttendanceCommandService meetingAttendanceCommandService;
+    private final MeetingAttendanceQueryService meetingAttendanceQueryService;
 
     // 모임 생성
     @PostMapping
@@ -151,5 +153,43 @@ public class MeetingController {
 
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(MeetingAttendanceResponse.from(result));
+    }
+
+    // 출석부 조회
+    @GetMapping("/{meetingId}/schedules/{scheduleId}/attendances")
+    public List<MeetingAttendanceResponse> getScheduleAttendances(
+            @PathVariable UUID meetingId,
+            @PathVariable UUID scheduleId
+    ) {
+        // TODO: 인증 컨텍스트 연결 후 현재 로그인 사용자 ID로 변경 (테스트 ID : 모임장)
+        UUID userId = UUID.fromString("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
+
+        List<MeetingAttendanceResult> results = meetingAttendanceQueryService.getScheduleAttendances(
+                meetingId,
+                scheduleId,
+                userId
+        );
+
+        return results.stream()
+                .map(MeetingAttendanceResponse::from)
+                .toList();
+    }
+
+    // 내 출석부 조회
+    @GetMapping("/{meetingId}/attendances/me")
+    public List<MeetingAttendanceResponse> getMyAttendances(
+            @PathVariable UUID meetingId
+    ) {
+        // TODO: 인증 컨텍스트 연결 후 현재 로그인 사용자 ID로 변경 (테스트 ID : 모임원)
+        UUID userId = UUID.fromString("cccccccc-cccc-cccc-cccc-cccccccccccc");
+
+        List<MeetingAttendanceResult> results = meetingAttendanceQueryService.getMyAttendances(
+                meetingId,
+                userId
+        );
+
+        return results.stream()
+                .map(MeetingAttendanceResponse::from)
+                .toList();
     }
 }
