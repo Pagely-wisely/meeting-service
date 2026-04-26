@@ -15,7 +15,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-
+// 모임 생성 요청 DTO
 @Getter
 @Builder
 @NoArgsConstructor
@@ -23,42 +23,43 @@ import lombok.NoArgsConstructor;
 public class CreateMeetingRequest {
 
     @NotNull
-    private UUID hostId;
+    private UUID hostId; // 모임장 ID
 
-    private String bookId;
+    private String bookId; // 책 ID
 
     @NotBlank
-    @Size(max = 20)
-    private String title;
+    @Size(max = 100)
+    private String title; // 모임명
 
     @Size(max = 200)
-    private String description;
-    
-    @NotNull
-    private MeetingType meetingType; // ONES, REGULAR
+    private String description; // 모임 설명
 
     @NotNull
-    private LocalDateTime recruitStartAt;
+    private MeetingType meetingType; // 모임 유형 (ONES, REGULAR)
 
     @NotNull
-    private LocalDateTime recruitEndAt;
+    private LocalDateTime recruitStartAt; // 모집 시작일
+
+    @NotNull
+    private LocalDateTime recruitEndAt; // 모집 종료일
 
     @NotNull
     @Positive
-    private Integer recruitMax;
+    private Integer recruitMax; // 모집 정원
 
     @NotNull
-    private ReadingLevel readingLevel; // BEGINNER, NORMAL, ADVANCED
+    private ReadingLevel readingLevel; // 독서 난이도 (BEGINNER, NORMAL, ADVANCED)
 
-    private String ruleMemo;
-
-    @NotNull
-    private RecruitRate recruitRate; // WEEKLY, BIWEEKLY, MONTHLY
+    private String ruleMemo; // 규칙 메모
 
     @NotNull
-    private Boolean freePaid;
+    private RecruitRate recruitRate; // 모집 주기 (WEEKLY, BIWEEKLY, MONTHLY)
 
-    public CreateMeetingCommand toCommand(UUID createdBy) { // 요청 DTO → 생성 커맨드 변환
+    @NotNull
+    private Boolean freePaid; // 무료/유료 여부
+
+    // 요청 DTO → 생성 커맨드 변환
+    public CreateMeetingCommand toCommand(UUID createdBy) {
         return CreateMeetingCommand.builder()
                 .hostId(this.hostId)
                 .bookId(this.bookId)

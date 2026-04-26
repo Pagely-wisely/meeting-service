@@ -13,6 +13,12 @@ public interface MeetingScheduleJpaRepository extends JpaRepository<MeetingSched
     // 특정 모임의 일정 목록 조회
     List<MeetingSchedule> findByMeetingId(UUID meetingId);
 
+    // 특정 모임의 삭제되지 않은 일정 목록 조회
+    List<MeetingSchedule> findByMeetingIdAndDeletedAtIsNullOrderByScheduleNumberAsc(UUID meetingId);
+
+    // 특정 모임의 삭제되지 않은 일정 상세 조회
+    Optional<MeetingSchedule> findByIdAndMeetingIdAndDeletedAtIsNull(UUID scheduleId, UUID meetingId);
+
     // 특정 모임의 상태별 일정 목록 조회
     List<MeetingSchedule> findByMeetingIdAndStatus(UUID meetingId, MeetingScheduleStatus status);
 
