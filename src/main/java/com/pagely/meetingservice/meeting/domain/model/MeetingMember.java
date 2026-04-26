@@ -64,6 +64,28 @@ public class MeetingMember {
     protected MeetingMember() {
     }
 
+    public static MeetingMember create(
+        UUID id,
+        UUID meetingId,
+        UUID userId,
+        MeetingMemberRole role,
+        MeetingMemberStatus status,
+        LocalDateTime createdAt,
+        UUID createdBy
+    ){
+        MeetingMember member = new MeetingMember();
+        member.id = id;
+        member.meetingId = meetingId;
+        member.userId = userId;
+        member.role = role;
+        member.status = status;
+        member.absentCount = 0;
+        member.warningCount = 0;
+        member.createdAt = createdAt;
+        member.createdBy = createdBy;
+        return member;
+    }
+
 //    // 활성 멤버인지 확인
 //    public boolean isActive() {
 //        return status == MeetingMemberStatus.ACTIVE;
