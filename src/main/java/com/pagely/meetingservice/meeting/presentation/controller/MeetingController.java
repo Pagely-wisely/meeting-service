@@ -1,6 +1,7 @@
 package com.pagely.meetingservice.meeting.presentation.controller;
 
 import com.pagely.meetingservice.meeting.application.dto.command.CreateMeetingScheduleCommand;
+import com.pagely.meetingservice.meeting.application.dto.command.UpdateAttendanceStatusCommand;
 import com.pagely.meetingservice.meeting.application.dto.result.MeetingAttendanceResult;
 import com.pagely.meetingservice.meeting.application.dto.result.MeetingJoinResult;
 import com.pagely.meetingservice.meeting.application.dto.result.MeetingResult;
@@ -16,6 +17,7 @@ import com.pagely.meetingservice.meeting.application.service.MeetingScheduleQuer
 import com.pagely.meetingservice.meeting.presentation.dto.request.CreateMeetingRequest;
 import com.pagely.meetingservice.meeting.presentation.dto.request.CreateMeetingScheduleRequest;
 import com.pagely.meetingservice.meeting.presentation.dto.request.JoinMeetingRequest;
+import com.pagely.meetingservice.meeting.presentation.dto.request.UpdateAttendanceStatusRequest;
 import com.pagely.meetingservice.meeting.presentation.dto.response.MeetingAttendanceResponse;
 import com.pagely.meetingservice.meeting.presentation.dto.response.MeetingJoinResponse;
 import com.pagely.meetingservice.meeting.presentation.dto.response.MeetingResponse;
@@ -28,6 +30,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -191,5 +194,26 @@ public class MeetingController {
         return results.stream()
                 .map(MeetingAttendanceResponse::from)
                 .toList();
+    }
+
+    // 출석 상태 변경
+    @PatchMapping("/{meetingId}/schedules/{scheduleId}/attendances")
+    public ResponseEntity<MeetingAttendanceResponse> changeAttendanceStatus(
+            @PathVariable UUID meetingId,
+            @PathVariable UUID scheduleId,
+            @Valid @RequestBody UpdateAttendanceStatusRequest req
+    ) {
+        // TODO: 인증 컨텍스트 연결 후 현재 로그인 사용자 ID로 변경
+        UUID updatedBy = UUID.fromString("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
+
+        UpdateAttendanceStatusCommand command = req.toCommand(
+                meetingId,
+                scheduleId,
+                updatedBy
+        );
+
+        MeetingAttendanceResult result = meetingAttendanceCommandService.changeAttendanceStatus(command);
+
+        return ResponseEntity.ok(MeetingAttendanceResponse.from(result));
     }
 }
