@@ -88,31 +88,33 @@ public class MeetingJoinService {
         MeetingJoin saved = meetingJoinRepository.save(join);
         return MeetingJoinResult.from(saved);
     }
+
     // 가입 승인
     @Transactional
-    public MeetingJoinResult approveMeetingJoin(UUID meetingId, UUID joinId, UUID hostId){
+    public MeetingJoinResult approveMeetingJoin(UUID meetingId, UUID joinId, UUID hostId) {
 
         Meeting meeting = meetingRepository.findById(meetingId)
-        .orElseThrow(()-> new IllegalArgumentException("모임이 존재하지 않습니다"));
+                .orElseThrow(() -> new IllegalArgumentException("모임이 존재하지 않습니다"));
 
-        if(!meeting.getHostId().equals(hostId)){ // 모임장 검증
+        if (!meeting.getHostId().equals(hostId)) { // 모임장 검증
             throw new IllegalStateException("모임장만 가입 승인할 수 있습니다.");
         }
 
         MeetingJoin join = meetingJoinRepository.findById(joinId)
-        .orElseThrow(()-> new IllegalArgumentException("가입 신청이 존재하지 않습니다."));
+                .orElseThrow(() -> new IllegalArgumentException("가입 신청이 존재하지 않습니다."));
 
-        if(!join.getMeetingId().equals(meetingId)){
+        if (!join.getMeetingId().equals(meetingId)) {
             throw new IllegalArgumentException("해당 모임의 가입 신청이 아닙니다.");
         }
 
-        if(meetingMemberRepository.existsByMeetingIdAndUserId(meetingId, join.getRecruitUserId())){ // 이미 모임에 참여중인 사용자 검증
+        if (meetingMemberRepository.existsByMeetingIdAndUserId(meetingId,
+                join.getRecruitUserId())) { // 이미 모임에 참여중인 사용자 검증
             throw new IllegalStateException("이미 모임에 참여중인 사용자입니다.");
         }
 
         long activeCount = meetingMemberRepository.countByMeetingIdAndStatus(meetingId, MeetingMemberStatus.ACTIVE);
 
-        if(activeCount >= meeting.getRecruitMax()){ // 모임 정원 검증
+        if (activeCount >= meeting.getRecruitMax()) { // 모임 정원 검증
             throw new IllegalStateException("모임 정원이 마감되었습니다.");
         }
 
@@ -121,15 +123,15 @@ public class MeetingJoinService {
 
         LocalDateTime now = LocalDateTime.now();
         MeetingMember member = MeetingMember.create(
-            UUID.randomUUID(),
-            meetingId,
-            join.getRecruitUserId(),
-            MeetingMemberRole.MEMBER,
-            MeetingMemberStatus.ACTIVE,
-            now,
-            hostId
+                UUID.randomUUID(),
+                meetingId,
+                join.getRecruitUserId(),
+                MeetingMemberRole.MEMBER,
+                MeetingMemberStatus.ACTIVE,
+                now,
+                hostId
         );
-        
+
         meetingMemberRepository.save(member);
 
         return MeetingJoinResult.from(savedJoin);

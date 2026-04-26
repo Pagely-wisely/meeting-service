@@ -65,14 +65,14 @@ public class MeetingMember {
     }
 
     public static MeetingMember create(
-        UUID id,
-        UUID meetingId,
-        UUID userId,
-        MeetingMemberRole role,
-        MeetingMemberStatus status,
-        LocalDateTime createdAt,
-        UUID createdBy
-    ){
+            UUID id,
+            UUID meetingId,
+            UUID userId,
+            MeetingMemberRole role,
+            MeetingMemberStatus status,
+            LocalDateTime createdAt,
+            UUID createdBy
+    ) {
         MeetingMember member = new MeetingMember();
         member.id = id;
         member.meetingId = meetingId;

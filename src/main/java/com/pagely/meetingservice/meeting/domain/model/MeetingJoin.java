@@ -59,16 +59,16 @@ public class MeetingJoin {
     protected MeetingJoin() {
     }
 
-   // 승인 처리
-   public void approve(UUID approvedBy) {
+    // 승인 처리
+    public void approve(UUID approvedBy) {
 
-    if(this.joinStatus != MeetingJoinStatus.PENDING) {
-        throw new IllegalArgumentException("승인 대기 상태의 신청만 승인할 수 있습니다.");
+        if (this.joinStatus != MeetingJoinStatus.PENDING) {
+            throw new IllegalArgumentException("승인 대기 상태의 신청만 승인할 수 있습니다.");
+        }
+        this.joinStatus = MeetingJoinStatus.APPROVED;
+        this.updatedBy = approvedBy;
+        this.updatedAt = LocalDateTime.now();
     }
-       this.joinStatus = MeetingJoinStatus.APPROVED;
-       this.updatedBy = approvedBy;
-       this.updatedAt = LocalDateTime.now();
-   }
 //
 //    // 거절 처리
 //    public void reject(String rejectReason, UUID rejectedBy) {
@@ -79,49 +79,56 @@ public class MeetingJoin {
 //    }
 
 
+    public static MeetingJoin create( // 가입 신청 생성 팩토리 메서드
+                                      UUID id,
+                                      UUID meetingId,
+                                      UUID recruitUserId,
+                                      String content,
+                                      LocalDateTime createdAt,
+                                      UUID createdBy
+    ) {
+        MeetingJoin join = new MeetingJoin();
+        join.id = id;
+        join.meetingId = meetingId;
+        join.recruitUserId = recruitUserId;
+        join.joinStatus = MeetingJoinStatus.PENDING; // 생성 시 기본 상태를 PENDING으로 고정
+        join.content = content;
+        join.rejectReason = null; // 생성 시 거절 사유 없음
+        join.createdAt = createdAt;
+        join.createdBy = createdBy;
+        return join;
 
-public static MeetingJoin create( // 가입 신청 생성 팩토리 메서드
-    UUID id,
-    UUID meetingId,
-    UUID recruitUserId,
-    String content,
-    LocalDateTime createdAt,
-    UUID createdBy
-){
-    MeetingJoin join = new MeetingJoin();
-    join.id = id;
-    join.meetingId = meetingId;
-    join.recruitUserId = recruitUserId;
-    join.joinStatus = MeetingJoinStatus.PENDING; // 생성 시 기본 상태를 PENDING으로 고정
-    join.content = content;
-    join.rejectReason = null; // 생성 시 거절 사유 없음
-    join.createdAt = createdAt;
-    join.createdBy = createdBy;
-    return join;
+    }
 
-}
-public UUID getId(){
-    return id;
-}
-public UUID getMeetingId(){
-    return meetingId;
-}
-public UUID getRecruitUserId(){
-    return recruitUserId;
-}
-public MeetingJoinStatus getJoinStatus(){
-    return joinStatus;
-}
-public String getContent(){
-    return content;
-}
-public String getRejectReason(){
-    return rejectReason;
-}
-public LocalDateTime getCreatedAt(){
-    return createdAt;
-}
-public UUID getCreatedBy(){
-    return createdBy;
-}
+    public UUID getId() {
+        return id;
+    }
+
+    public UUID getMeetingId() {
+        return meetingId;
+    }
+
+    public UUID getRecruitUserId() {
+        return recruitUserId;
+    }
+
+    public MeetingJoinStatus getJoinStatus() {
+        return joinStatus;
+    }
+
+    public String getContent() {
+        return content;
+    }
+
+    public String getRejectReason() {
+        return rejectReason;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public UUID getCreatedBy() {
+        return createdBy;
+    }
 }
