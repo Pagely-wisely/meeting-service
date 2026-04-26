@@ -2,6 +2,7 @@ package com.pagely.meetingservice.meeting.presentation.controller;
 
 import com.pagely.meetingservice.meeting.application.dto.command.CreateMeetingScheduleCommand;
 import com.pagely.meetingservice.meeting.application.dto.command.UpdateAttendanceStatusCommand;
+import com.pagely.meetingservice.meeting.application.dto.command.UpdateScheduleStatusCommand;
 import com.pagely.meetingservice.meeting.application.dto.result.MeetingAttendanceResult;
 import com.pagely.meetingservice.meeting.application.dto.result.MeetingJoinResult;
 import com.pagely.meetingservice.meeting.application.dto.result.MeetingResult;
@@ -18,6 +19,7 @@ import com.pagely.meetingservice.meeting.presentation.dto.request.CreateMeetingR
 import com.pagely.meetingservice.meeting.presentation.dto.request.CreateMeetingScheduleRequest;
 import com.pagely.meetingservice.meeting.presentation.dto.request.JoinMeetingRequest;
 import com.pagely.meetingservice.meeting.presentation.dto.request.UpdateAttendanceStatusRequest;
+import com.pagely.meetingservice.meeting.presentation.dto.request.UpdateScheduleStatusRequest;
 import com.pagely.meetingservice.meeting.presentation.dto.response.MeetingAttendanceResponse;
 import com.pagely.meetingservice.meeting.presentation.dto.response.MeetingJoinResponse;
 import com.pagely.meetingservice.meeting.presentation.dto.response.MeetingResponse;
@@ -156,6 +158,27 @@ public class MeetingController {
 
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(MeetingAttendanceResponse.from(result));
+    }
+
+    // 모임 일정 상태 변경
+    @PatchMapping("/{meetingId}/schedules/{scheduleId}/status")
+    public ResponseEntity<MeetingScheduleResponse> changeMeetingScheduleStatus(
+            @PathVariable UUID meetingId,
+            @PathVariable UUID scheduleId,
+            @Valid @RequestBody UpdateScheduleStatusRequest req
+    ) {
+        // TODO: 인증 컨텍스트 연결 후 현재 로그인 사용자 ID로 변경
+        UUID updatedBy = UUID.fromString("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
+
+        UpdateScheduleStatusCommand command = req.toCommand(
+                meetingId,
+                scheduleId,
+                updatedBy
+        );
+
+        MeetingScheduleResult result = meetingScheduleCommandService.changeScheduleStatus(command);
+
+        return ResponseEntity.ok(MeetingScheduleResponse.from(result));
     }
 
     // 출석부 조회

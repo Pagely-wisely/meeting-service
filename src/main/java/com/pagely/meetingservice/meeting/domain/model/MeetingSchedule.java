@@ -7,6 +7,7 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 import lombok.Getter;
 import org.hibernate.annotations.JdbcTypeCode;
@@ -54,15 +55,19 @@ public class MeetingSchedule {
     @Column(name = "created_by", nullable = false, updatable = false)
     private UUID createdBy;
 
+    // 수정 시각
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
+    // 수정자 ID
     @Column(name = "updated_by")
     private UUID updatedBy;
 
+    // 삭제 시각
     @Column(name = "deleted_at")
     private LocalDateTime deletedAt;
 
+    // 삭제자 ID
     @Column(name = "deleted_by")
     private UUID deletedBy;
 
@@ -95,5 +100,26 @@ public class MeetingSchedule {
         schedule.createdAt = createdAt;
         schedule.createdBy = createdBy;
         return schedule;
+    }
+
+    // 모임 일정 상태 변경
+    public void changeStatus(MeetingScheduleStatus status, UUID updatedBy) {
+        this.status = status;
+        this.updatedBy = updatedBy;
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    // 모임 일정 종료 처리
+    public void finish(List<MeetingAttendance> attendances, UUID updatedBy) {
+        changeStatus(MeetingScheduleStatus.FINISHED, updatedBy);
+
+        for (MeetingAttendance attendance : attendances) {
+            attendance.markAbsentIfNotAttended(updatedBy);
+        }
+    }
+
+    // 진행중인 일정인지 확인
+    public boolean isOngoing() {
+        return status == MeetingScheduleStatus.ONGOING;
     }
 }

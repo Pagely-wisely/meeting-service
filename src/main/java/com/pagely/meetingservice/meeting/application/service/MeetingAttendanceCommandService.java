@@ -78,6 +78,10 @@ public class MeetingAttendanceCommandService {
             throw new IllegalArgumentException("해당 모임에 속한 일정이 아닙니다.");
         }
 
+        if (!schedule.isOngoing()) {
+            throw new IllegalArgumentException("진행중인 일정에서만 출석 상태를 변경할 수 있습니다.");
+        }
+
         MeetingMember updater = meetingMemberRepository.findByMeetingIdAndUserId(
                         command.meetingId(),
                         command.updatedBy()

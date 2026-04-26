@@ -125,6 +125,19 @@ public class MeetingAttendance {
         this.updatedAt = LocalDateTime.now();
     }
 
+    // 출석 완료가 아닌 경우 결석 처리
+    public void markAbsentIfNotAttended(UUID updatedBy) {
+        if (this.status == AttendanceStatus.ATTENDED) {
+            return;
+        }
+
+        this.status = AttendanceStatus.ABSENT;
+        this.note = "일정 종료로 인한 자동 결석 처리";
+        this.checkedAt = LocalDateTime.now();
+        this.updatedBy = updatedBy;
+        this.updatedAt = LocalDateTime.now();
+    }
+
     public UUID getId() {
         return id;
     }
