@@ -56,6 +56,8 @@ jobs:
       MEETING_DB_NAME: pagely_meeting
       DB_USERNAME: postgre
       DB_PASSWORD: postgre
+      GPR_USER: ${{ secrets.GPR_USER }}
+      GPR_KEY: ${{ secrets.GPR_KEY }}
 
     steps:
       - name: Checkout repository
