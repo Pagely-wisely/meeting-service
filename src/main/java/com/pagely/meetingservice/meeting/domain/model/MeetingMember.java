@@ -47,6 +47,10 @@ public class MeetingMember {
     @Column(name = "warning_count", nullable = false)
     private int warningCount;
 
+    // 지각 횟수
+    @Column(name = "late_count", nullable = false)
+    private int lateCount;
+
     // 생성 시각
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -104,6 +108,40 @@ public class MeetingMember {
         member.createdAt = createdAt;
         member.createdBy = createdBy;
         return member;
+    }
+
+    // 출석 상태에 따른 패널티 반영
+    public void applyAttendancePenalty(AttendanceStatus attendanceStatus, UUID updatedBy) {
+        // 출석 또는 사유 결석은 패널티 대상이 아님
+        if (attendanceStatus == AttendanceStatus.ATTENDED
+                || attendanceStatus == AttendanceStatus.EXCUSED) {
+            return;
+        }
+
+        // 지각 처리
+        if (attendanceStatus == AttendanceStatus.LATE) {
+            this.lateCount++;
+
+            // 정책상 지각 1회는 경고 1회로 반영
+            this.warningCount++;
+
+            // 정책상 지각 4회는 결석 1회로 환산
+            if (this.lateCount == 4) {
+                this.absentCount++;
+            }
+        }
+
+        // 결석 처리
+        if (attendanceStatus == AttendanceStatus.ABSENT) {
+            this.absentCount++;
+        }
+
+        this.updatedBy = updatedBy;
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    public int getLateCount() {
+        return lateCount;
     }
 
     public UUID getId() {

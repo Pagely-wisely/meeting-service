@@ -124,6 +124,7 @@ CREATE TABLE p_meeting_members (
                                    status meeting_member_status NOT NULL,
                                    absent_count INT NOT NULL DEFAULT 0,
                                    warning_count INT NOT NULL DEFAULT 0,
+                                   late_count INT NOT NULL DEFAULT 0,
                                    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
                                    created_by UUID NOT NULL,
                                    updated_at TIMESTAMP,
@@ -133,7 +134,8 @@ CREATE TABLE p_meeting_members (
                                    CONSTRAINT fk_p_meeting_members_meeting
                                        FOREIGN KEY (meeting_id) REFERENCES p_meeting(id),
                                    CONSTRAINT ck_p_meeting_members_absent_count CHECK (absent_count >= 0),
-                                   CONSTRAINT ck_p_meeting_members_warning_count CHECK (warning_count >= 0)
+                                   CONSTRAINT ck_p_meeting_members_warning_count CHECK (warning_count >= 0),
+                                   CONSTRAINT ck_p_meeting_members_late_count CHECK (late_count >= 0)
 );
 
 -- =========================

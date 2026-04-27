@@ -7,6 +7,7 @@ import com.pagely.meetingservice.meeting.domain.exception.MeetingAttendanceError
 import com.pagely.meetingservice.meeting.domain.exception.MeetingErrorCode;
 import com.pagely.meetingservice.meeting.domain.exception.MeetingMemberErrorCode;
 import com.pagely.meetingservice.meeting.domain.exception.MeetingScheduleErrorCode;
+import com.pagely.meetingservice.meeting.domain.model.AttendanceStatus;
 import com.pagely.meetingservice.meeting.domain.model.MeetingAttendance;
 import com.pagely.meetingservice.meeting.domain.model.MeetingMember;
 import com.pagely.meetingservice.meeting.domain.model.MeetingSchedule;
@@ -44,9 +45,12 @@ public class MeetingAttendanceCommandService {
             throw new BusinessException(MeetingScheduleErrorCode.SCHEDULE_NOT_FOR_MEETING);
         }
 
-        boolean isMember = meetingMemberRepository.existsByMeetingIdAndUserId(meetingId, userId);
-        if (!isMember) {
-            throw new BusinessException(MeetingAttendanceErrorCode.ONLY_MEMBER_CAN_JOIN_SCHEDULE);
+        // 일정 참석 등록은 ACTIVE 상태의 모임원만 가능
+        MeetingMember member = meetingMemberRepository.findByMeetingIdAndUserId(meetingId, userId)
+                .orElseThrow(() -> new BusinessException(MeetingAttendanceErrorCode.ONLY_MEMBER_CAN_JOIN_SCHEDULE));
+
+        if (!member.isActive()) {
+            throw new BusinessException(MeetingAttendanceErrorCode.ONLY_ACTIVE_MEMBER_CAN_JOIN_SCHEDULE);
         }
 
         boolean alreadyJoined = meetingAttendanceRepository.existsByScheduleIdAndUserId(scheduleId, userId);
@@ -97,12 +101,16 @@ public class MeetingAttendanceCommandService {
             throw new BusinessException(MeetingAttendanceErrorCode.ONLY_HOST_CAN_CHANGE_ATTENDANCE);
         }
 
-        boolean targetIsMember = meetingMemberRepository.existsByMeetingIdAndUserId(
-                command.meetingId(),
-                command.userId()
-        );
-        if (!targetIsMember) {
-            throw new BusinessException(MeetingAttendanceErrorCode.ATTENDANCE_USER_NOT_MEETING_MEMBER);
+        // 출석 상태 변경 대상자는 ACTIVE 상태의 모임원이어야 함
+        MeetingMember targetMember = meetingMemberRepository.findByMeetingIdAndUserId(
+                        command.meetingId(),
+                        command.userId()
+                )
+                .orElseThrow(
+                        () -> new BusinessException(MeetingAttendanceErrorCode.ATTENDANCE_USER_NOT_MEETING_MEMBER));
+
+        if (!targetMember.isActive()) {
+            throw new BusinessException(MeetingAttendanceErrorCode.ONLY_ACTIVE_MEMBER_CAN_CHANGE_ATTENDANCE);
         }
 
         MeetingAttendance attendance = meetingAttendanceRepository.findByScheduleIdAndUserId(
@@ -111,8 +119,22 @@ public class MeetingAttendanceCommandService {
                 )
                 .orElseThrow(() -> new BusinessException(MeetingAttendanceErrorCode.ATTENDANCE_NOT_FOUND));
 
+        AttendanceStatus finalStatus = command.status();
+
+        // 출석 처리 요청이 들어왔더라도 시작 시간 기준 10분 초과면 지각 처리
+        if (command.status() == AttendanceStatus.ATTENDED
+                && LocalDateTime.now().isAfter(schedule.getStartAt().plusMinutes(10))) {
+            finalStatus = AttendanceStatus.LATE;
+        }
+
+        System.out.println("요청 scheduleId = " + command.scheduleId());
+        System.out.println("요청 userId = " + command.userId());
+        System.out.println("DB 출석 ID = " + attendance.getId());
+        System.out.println("DB 출석 상태 = " + attendance.getStatus());
+        System.out.println("요청 변경 상태 = " + command.status());
+
         attendance.changeStatus(
-                command.status(),
+                finalStatus,
                 command.note(),
                 command.updatedBy()
         );

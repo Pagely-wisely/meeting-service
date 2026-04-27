@@ -38,11 +38,17 @@ public class MeetingScheduleCommandService {
         Meeting meeting = meetingRepository.findById(command.meetingId())
                 .orElseThrow(() -> new BusinessException(MeetingErrorCode.MEETING_NOT_FOUND));
 
-        // TODO: 인증 컨텍스트 연결 후 모임장 권한 검증
-//        if (!meeting.getHostId().equals(hostId)) {
-//            throw new BusinessException(MeetingJoinErrorCode.ONLY_HOST_CAN_APPROVE_JOIN);
-//        }
+        // 일정 생성은 ACTIVE 상태의 모임장만 가능
+        MeetingMember requester = meetingMemberRepository.findByMeetingIdAndUserId(
+                        command.meetingId(),
+                        command.requesterId()
+                )
+                .orElseThrow(() -> new BusinessException(MeetingMemberErrorCode.ONLY_MEETING_MEMBER_ALLOWED));
 
+        if (!requester.isActive() || !requester.isHost()) {
+            throw new BusinessException(MeetingScheduleErrorCode.ONLY_HOST_CAN_CREATE_SCHEDULE);
+        }
+        
         int nextScheduleNumber = calculateNextScheduleNumber(command.meetingId());
 
         MeetingSchedule schedule = MeetingSchedule.create(
@@ -53,7 +59,7 @@ public class MeetingScheduleCommandService {
                 command.startAt(),
                 command.discussionNote(),
                 LocalDateTime.now(),
-                command.createdBy()
+                command.requesterId()
         );
 
         MeetingSchedule savedSchedule = meetingScheduleRepository.save(schedule);
@@ -80,6 +86,7 @@ public class MeetingScheduleCommandService {
                 )
                 .orElseThrow(() -> new BusinessException(MeetingMemberErrorCode.ONLY_MEETING_MEMBER_ALLOWED));
 
+        // 모임 일정 상태 변경은 활성화된 유저이고 모임장만 가능
         if (!updater.isActive() || !updater.isHost()) {
             throw new BusinessException(MeetingScheduleErrorCode.ONLY_HOST_CAN_CHANGE_SCHEDULE_STATUS);
         }

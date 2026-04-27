@@ -22,6 +22,8 @@ public enum MeetingAttendanceErrorCode implements ErrorCode {
     ATTENDANCE_STATUS_ALREADY_CHANGED(HttpStatus.BAD_REQUEST, "ATTENDANCE_STATUS_ALREADY_CHANGED",
             "이미 변경된 출석 상태는 다시 변경할 수 없습니다."), // 출석 상태 재변경 불가
     INVALID_ATTENDANCE_STATUS(HttpStatus.BAD_REQUEST, "INVALID_ATTENDANCE_STATUS", "허용되지 않은 출석 상태입니다."), // 출석 상태 유효성 실패
+    INVALID_ATTENDANCE_STATUS_CHANGE(HttpStatus.BAD_REQUEST, "INVALID_ATTENDANCE_STATUS_CHANGE",
+            "출석 상태는 PENDING에서만 변경할 수 있으며, PENDING으로 되돌릴 수 없습니다."), // 잘못된 출석 상태 변경
 
     /*
      * =========================================================
@@ -34,6 +36,10 @@ public enum MeetingAttendanceErrorCode implements ErrorCode {
             "모임장만 전체 출석부를 조회할 수 있습니다."), // 전체 출석부 조회 권한 없음
     ONLY_HOST_CAN_CHANGE_ATTENDANCE(HttpStatus.FORBIDDEN, "ONLY_HOST_CAN_CHANGE_ATTENDANCE",
             "모임장만 출석 상태를 변경할 수 있습니다."), // 출석 상태 변경 권한 없음
+    ONLY_ACTIVE_MEMBER_CAN_JOIN_SCHEDULE(HttpStatus.FORBIDDEN, "ONLY_ACTIVE_MEMBER_CAN_JOIN_SCHEDULE",
+            "ACTIVE 상태의 모임원만 일정 참석 등록이 가능합니다."), // 비활성 모임원 참석 등록 불가
+    ONLY_ACTIVE_MEMBER_CAN_CHANGE_ATTENDANCE(HttpStatus.FORBIDDEN, "ONLY_ACTIVE_MEMBER_CAN_CHANGE_ATTENDANCE",
+            "ACTIVE 상태의 모임원만 출석 상태 변경 대상이 될 수 있습니다."), // 비활성 모임원 출석 변경 불가
 
     /*
      * =========================================================

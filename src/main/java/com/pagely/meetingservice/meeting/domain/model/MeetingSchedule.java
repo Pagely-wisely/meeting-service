@@ -105,8 +105,34 @@ public class MeetingSchedule {
     }
 
     // 모임 일정 상태 변경
-    public void changeStatus(MeetingScheduleStatus status, UUID updatedBy) {
-        this.status = status;
+    public void changeStatus(MeetingScheduleStatus newStatus, UUID updatedBy) {
+        // 동일 상태로 변경하는 것은 허용하지 않음
+        if (this.status == newStatus) {
+            throw new BusinessException(MeetingScheduleErrorCode.INVALID_SCHEDULE_STATUS_CHANGE);
+        }
+
+        // FINISHED, CANCELLED 상태는 최종 상태이므로 더 이상 변경 불가
+        if (this.status == MeetingScheduleStatus.FINISHED
+                || this.status == MeetingScheduleStatus.CANCELLED) {
+            throw new BusinessException(MeetingScheduleErrorCode.INVALID_SCHEDULE_STATUS_CHANGE);
+        }
+
+        // SCHEDULED 상태에서는 ONGOING 또는 CANCELLED 로만 변경 가능
+        if (this.status == MeetingScheduleStatus.SCHEDULED) {
+            if (newStatus != MeetingScheduleStatus.ONGOING
+                    && newStatus != MeetingScheduleStatus.CANCELLED) {
+                throw new BusinessException(MeetingScheduleErrorCode.INVALID_SCHEDULE_STATUS_CHANGE);
+            }
+        }
+
+        // ONGOING 상태에서는 FINISHED 로만 변경 가능
+        if (this.status == MeetingScheduleStatus.ONGOING) {
+            if (newStatus != MeetingScheduleStatus.FINISHED) {
+                throw new BusinessException(MeetingScheduleErrorCode.INVALID_SCHEDULE_STATUS_CHANGE);
+            }
+        }
+
+        this.status = newStatus;
         this.updatedBy = updatedBy;
         this.updatedAt = LocalDateTime.now();
     }

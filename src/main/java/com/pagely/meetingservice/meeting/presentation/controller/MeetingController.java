@@ -145,7 +145,7 @@ public class MeetingController {
                 req.startAt(),
                 req.discussionNote(),
                 // TODO: 인증 컨텍스트 연결 후 현재 로그인 사용자 ID로 변경
-                UUID.fromString("00000000-0000-0000-0000-000000000001")
+                UUID.fromString("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa")
         );
 
         MeetingScheduleResult result = meetingScheduleCommandService.createSchedule(command);
