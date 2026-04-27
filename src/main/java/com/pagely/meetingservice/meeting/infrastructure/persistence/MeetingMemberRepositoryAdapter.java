@@ -7,53 +7,83 @@ import com.pagely.meetingservice.meeting.domain.repository.MeetingMemberReposito
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Repository;
 
+// 모임 멤버 Repository Adapter
+@Repository
+@RequiredArgsConstructor
 public class MeetingMemberRepositoryAdapter implements MeetingMemberRepository {
 
-    private final JpaMeetingMemberRepository jpaMeetingMemberRepository;
+    private final MeetingMemberJpaRepository meetingMemberJpaRepository;
 
-    public MeetingMemberRepositoryAdapter(JpaMeetingMemberRepository jpaMeetingMemberRepository) {
-        this.jpaMeetingMemberRepository = jpaMeetingMemberRepository;
-    }
-
+    // 멤버 저장
     @Override
     public MeetingMember save(MeetingMember meetingMember) {
-        return jpaMeetingMemberRepository.save(meetingMember);
+        return meetingMemberJpaRepository.save(meetingMember);
     }
 
+    // ID로 멤버 조회
     @Override
     public Optional<MeetingMember> findById(UUID memberId) {
-        return jpaMeetingMemberRepository.findById(memberId);
+        return meetingMemberJpaRepository.findById(memberId);
     }
 
+    // 모임과 유저 기준 멤버 조회
     @Override
     public Optional<MeetingMember> findByMeetingIdAndUserId(UUID meetingId, UUID userId) {
-        return jpaMeetingMemberRepository.findByMeetingIdAndUserId(meetingId, userId);
+        return meetingMemberJpaRepository.findByMeetingIdAndUserIdAndDeletedAtIsNull(
+                meetingId,
+                userId
+        );
     }
 
+    // 특정 모임의 전체 멤버 조회
     @Override
     public List<MeetingMember> findByMeetingId(UUID meetingId) {
-        return jpaMeetingMemberRepository.findByMeetingId(meetingId);
+        return meetingMemberJpaRepository.findAllByMeetingIdAndDeletedAtIsNull(meetingId);
     }
 
+    // 특정 모임의 상태별 멤버 조회
     @Override
-    public List<MeetingMember> findByMeetingIdAndStatus(UUID meetingId, MeetingMemberStatus status) {
-        return jpaMeetingMemberRepository.findByMeetingIdAndStatus(meetingId, status);
+    public List<MeetingMember> findByMeetingIdAndStatus(
+            UUID meetingId,
+            MeetingMemberStatus status
+    ) {
+        return meetingMemberJpaRepository.findAllByMeetingIdAndStatusAndDeletedAtIsNull(
+                meetingId,
+                status
+        );
     }
 
+    // 특정 모임의 역할별 멤버 조회
     @Override
-    public List<MeetingMember> findByMeetingIdAndRole(UUID meetingId, MeetingMemberRole role) {
-        return jpaMeetingMemberRepository.findByMeetingIdAndRole(meetingId, role);
+    public List<MeetingMember> findByMeetingIdAndRole(
+            UUID meetingId,
+            MeetingMemberRole role
+    ) {
+        return meetingMemberJpaRepository.findAllByMeetingIdAndRoleAndDeletedAtIsNull(
+                meetingId,
+                role
+        );
     }
 
+    // 특정 모임의 활성 멤버 수 조회
     @Override
     public long countByMeetingIdAndStatus(UUID meetingId, MeetingMemberStatus status) {
-        return jpaMeetingMemberRepository.countByMeetingIdAndStatus(meetingId, status);
+        return meetingMemberJpaRepository.countByMeetingIdAndStatusAndDeletedAtIsNull(
+                meetingId,
+                status
+        );
     }
 
+    // 특정 유저가 해당 모임의 활성 멤버인지 확인
     @Override
     public boolean existsByMeetingIdAndUserId(UUID meetingId, UUID userId) {
-        return jpaMeetingMemberRepository.existsByMeetingIdAndUserId(meetingId, userId);
+        return meetingMemberJpaRepository.existsByMeetingIdAndUserIdAndStatusAndDeletedAtIsNull(
+                meetingId,
+                userId,
+                MeetingMemberStatus.ACTIVE
+        );
     }
-
 }

@@ -12,7 +12,7 @@ import org.springframework.stereotype.Repository;
 // 모임 일정 참석 Repository 구현체
 @Repository
 @RequiredArgsConstructor
-public class MeetingAttendanceRepositoryImpl implements MeetingAttendanceRepository {
+public class MeetingAttendanceRepositoryAdapter implements MeetingAttendanceRepository {
 
     private final MeetingAttendanceJpaRepository meetingAttendanceJpaRepository;
 

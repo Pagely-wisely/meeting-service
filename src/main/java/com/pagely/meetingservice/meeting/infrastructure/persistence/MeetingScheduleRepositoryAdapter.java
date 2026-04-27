@@ -12,7 +12,7 @@ import org.springframework.stereotype.Repository;
 // 모임 일정 Repository 구현체
 @Repository
 @RequiredArgsConstructor
-public class MeetingScheduleRepositoryImpl implements MeetingScheduleRepository {
+public class MeetingScheduleRepositoryAdapter implements MeetingScheduleRepository {
 
     private final MeetingScheduleJpaRepository meetingScheduleJpaRepository;
 
