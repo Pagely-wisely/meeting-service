@@ -153,6 +153,9 @@ public class MeetingController {
 
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(MeetingAttendanceResponse.from(result));
+
+    }
+
     // 가입 신청 목록 조회
     @GetMapping("/{meetingId}/join")
     public List<MeetingJoinResponse> getMeetingJoinList(
