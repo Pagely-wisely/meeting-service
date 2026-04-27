@@ -1,7 +1,10 @@
 package com.pagely.meetingservice.meeting.application.service;
 
+import com.pagely.common.exception.BusinessException;
 import com.pagely.meetingservice.meeting.application.dto.command.JoinMeetingCommand;
 import com.pagely.meetingservice.meeting.application.dto.result.MeetingJoinResult;
+import com.pagely.meetingservice.meeting.domain.exception.MeetingErrorCode;
+import com.pagely.meetingservice.meeting.domain.exception.MeetingJoinErrorCode;
 import com.pagely.meetingservice.meeting.domain.model.Meeting;
 import com.pagely.meetingservice.meeting.domain.model.MeetingJoin;
 import com.pagely.meetingservice.meeting.domain.model.MeetingJoinStatus;
@@ -44,10 +47,10 @@ public class MeetingJoinService {
     public List<MeetingJoinResult> getMeetingJoinList(UUID meetingId, UUID requesterHostId,
                                                       MeetingJoinStatus joinStatus) {
         Meeting meeting = meetingRepository.findById(meetingId) // 모임 조회    
-                .orElseThrow(() -> new IllegalArgumentException("모임이 존재하지 않습니다."));
+                .orElseThrow(() -> new BusinessException(MeetingErrorCode.MEETING_NOT_FOUND));
 
         if (!meeting.getHostId().equals(requesterHostId)) { // 모임장 검증
-            throw new IllegalArgumentException("모임장만 가입 신청 목록을 조회할 수 있습니다.");
+            throw new BusinessException(MeetingJoinErrorCode.ONLY_HOST_CAN_VIEW_JOIN_LIST);
 
         }
         List<MeetingJoin> joins;
@@ -69,17 +72,17 @@ public class MeetingJoinService {
     @Transactional
     public MeetingJoinResult createMeetingJoin(JoinMeetingCommand command) {
         Meeting meeting = meetingRepository.findById(command.meetingId())
-                .orElseThrow(() -> new IllegalArgumentException("모임이 존재하지 않습니다"));
+                .orElseThrow(() -> new BusinessException(MeetingErrorCode.MEETING_NOT_FOUND));
 
         // 모집 상태가 RECRUITING인지 검사
         if (meeting.getRecruitStatus() != RecruitStatus.RECRUITING) {
-            throw new IllegalStateException("현재 모집 중인 모임이 아닙니다.");
+            throw new BusinessException(MeetingJoinErrorCode.NOT_RECRUITING_MEETING);
         }
 
         // 중복 신청 여부 검사
         if (meetingJoinRepository.existsByMeetingIdAndRecruitUserId(command.meetingId(),
                 command.recruitUserId())) {
-            throw new IllegalStateException("이미 가입 신청한 모임입니다.");
+            throw new BusinessException(MeetingJoinErrorCode.MEETING_JOIN_ALREADY_EXISTS);
         }
 
         UUID joinId = UUID.randomUUID();
@@ -94,28 +97,28 @@ public class MeetingJoinService {
     public MeetingJoinResult approveMeetingJoin(UUID meetingId, UUID joinId, UUID hostId) {
 
         Meeting meeting = meetingRepository.findById(meetingId)
-                .orElseThrow(() -> new IllegalArgumentException("모임이 존재하지 않습니다"));
+                .orElseThrow(() -> new BusinessException(MeetingErrorCode.MEETING_NOT_FOUND));
 
         if (!meeting.getHostId().equals(hostId)) { // 모임장 검증
-            throw new IllegalStateException("모임장만 가입 승인할 수 있습니다.");
+            throw new BusinessException(MeetingJoinErrorCode.ONLY_HOST_CAN_APPROVE_JOIN);
         }
 
         MeetingJoin join = meetingJoinRepository.findById(joinId)
-                .orElseThrow(() -> new IllegalArgumentException("가입 신청이 존재하지 않습니다."));
+                .orElseThrow(() -> new BusinessException(MeetingJoinErrorCode.MEETING_JOIN_NOT_FOUND));
 
         if (!join.getMeetingId().equals(meetingId)) {
-            throw new IllegalArgumentException("해당 모임의 가입 신청이 아닙니다.");
+            throw new BusinessException(MeetingJoinErrorCode.JOIN_NOT_FOR_MEETING);
         }
 
         if (meetingMemberRepository.existsByMeetingIdAndUserId(meetingId,
                 join.getRecruitUserId())) { // 이미 모임에 참여중인 사용자 검증
-            throw new IllegalStateException("이미 모임에 참여중인 사용자입니다.");
+            throw new BusinessException(MeetingJoinErrorCode.ALREADY_MEETING_MEMBER);
         }
 
         long activeCount = meetingMemberRepository.countByMeetingIdAndStatus(meetingId, MeetingMemberStatus.ACTIVE);
 
         if (activeCount >= meeting.getRecruitMax()) { // 모임 정원 검증
-            throw new IllegalStateException("모임 정원이 마감되었습니다.");
+            throw new BusinessException(MeetingJoinErrorCode.MEETING_RECRUIT_FULL);
         }
 
         join.approve(hostId);
