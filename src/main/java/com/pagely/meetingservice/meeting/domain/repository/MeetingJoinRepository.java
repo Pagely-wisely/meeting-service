@@ -26,4 +26,5 @@ public interface MeetingJoinRepository {
 
     // 이미 가입 신청했는지 확인
     boolean existsByMeetingIdAndRecruitUserId(UUID meetingId, UUID recruitUserId);
+
 }

@@ -12,6 +12,7 @@ import com.pagely.meetingservice.meeting.application.service.MeetingJoinService;
 import com.pagely.meetingservice.meeting.application.service.MeetingQueryService;
 import com.pagely.meetingservice.meeting.application.service.MeetingScheduleCommandService;
 import com.pagely.meetingservice.meeting.application.service.MeetingScheduleQueryService;
+import com.pagely.meetingservice.meeting.domain.model.MeetingJoinStatus;
 import com.pagely.meetingservice.meeting.presentation.dto.request.CreateMeetingRequest;
 import com.pagely.meetingservice.meeting.presentation.dto.request.CreateMeetingScheduleRequest;
 import com.pagely.meetingservice.meeting.presentation.dto.request.JoinMeetingRequest;
@@ -31,6 +32,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 // 모임 API 컨트롤러
@@ -151,5 +153,17 @@ public class MeetingController {
 
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(MeetingAttendanceResponse.from(result));
+    // 가입 신청 목록 조회
+    @GetMapping("/{meetingId}/join")
+    public List<MeetingJoinResponse> getMeetingJoinList(
+            @PathVariable UUID meetingId,
+            @RequestParam UUID hostId,
+            @RequestParam(required = false) MeetingJoinStatus joinStatus
+    ) {
+        List<MeetingJoinResult> results = meetingJoinService.getMeetingJoinList(meetingId, hostId, joinStatus);
+
+        return results.stream()
+                .map(MeetingJoinResponse::from)
+                .toList();
     }
 }
