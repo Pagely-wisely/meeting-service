@@ -18,8 +18,8 @@ repositories {
     maven {
         url = uri("https://maven.pkg.github.com/Pagely-wisely/common")
         credentials {
-            username = findProperty("gpr.user")
-            password = findProperty("gpr.key")
+            username = findProperty("gpr.user") ?: System.getenv("GPR_USER")
+            password = findProperty("gpr.key") ?: System.getenv("GPR_KEY")
         }
     }
 }
