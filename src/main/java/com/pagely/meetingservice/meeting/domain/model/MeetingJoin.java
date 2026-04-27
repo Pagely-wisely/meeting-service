@@ -8,6 +8,8 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.time.LocalDateTime;
 import java.util.UUID;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 @Entity
 @Table(name = "p_meeting_recruit")
@@ -26,7 +28,8 @@ public class MeetingJoin {
 
     // 신청 상태
     @Enumerated(EnumType.STRING)
-    @Column(name = "recruit_status", nullable = false)
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
+    @Column(name = "recruit_status", nullable = false, columnDefinition = "meeting_join_status")
     private MeetingJoinStatus joinStatus;
 
     // 신청 내용
