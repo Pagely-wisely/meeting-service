@@ -228,4 +228,8 @@ public class Meeting {
     public UUID getCreatedBy() {
         return createdBy;
     }
+
+    public boolean canViewJoinApplications(UUID userId) {
+        return this.hostId.equals(userId);
+    }
 }

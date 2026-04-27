@@ -62,12 +62,16 @@ public class MeetingJoin {
     protected MeetingJoin() {
     }
 
-//    // 승인 처리
-//    public void approve(UUID approvedBy) {
-//        this.joinStatus = MeetingJoinStatus.APPROVED;
-//        this.updatedBy = approvedBy;
-//        this.updatedAt = LocalDateTime.now();
-//    }
+    // 승인 처리
+    public void approve(UUID approvedBy) {
+
+        if (this.joinStatus != MeetingJoinStatus.PENDING) {
+            throw new IllegalArgumentException("승인 대기 상태의 신청만 승인할 수 있습니다.");
+        }
+        this.joinStatus = MeetingJoinStatus.APPROVED;
+        this.updatedBy = approvedBy;
+        this.updatedAt = LocalDateTime.now();
+    }
 //
 //    // 거절 처리
 //    public void reject(String rejectReason, UUID rejectedBy) {

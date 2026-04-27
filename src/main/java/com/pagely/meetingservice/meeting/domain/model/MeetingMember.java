@@ -84,6 +84,28 @@ public class MeetingMember {
         return role == MeetingMemberRole.HOST;
     }
 
+    public static MeetingMember create(
+            UUID id,
+            UUID meetingId,
+            UUID userId,
+            MeetingMemberRole role,
+            MeetingMemberStatus status,
+            LocalDateTime createdAt,
+            UUID createdBy
+    ) {
+        MeetingMember member = new MeetingMember();
+        member.id = id;
+        member.meetingId = meetingId;
+        member.userId = userId;
+        member.role = role;
+        member.status = status;
+        member.absentCount = 0;
+        member.warningCount = 0;
+        member.createdAt = createdAt;
+        member.createdBy = createdBy;
+        return member;
+    }
+
     public UUID getId() {
         return id;
     }
@@ -119,4 +141,5 @@ public class MeetingMember {
     public UUID getCreatedBy() {
         return createdBy;
     }
+
 }
