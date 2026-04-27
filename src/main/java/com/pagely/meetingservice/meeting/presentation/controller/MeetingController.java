@@ -1,10 +1,12 @@
 package com.pagely.meetingservice.meeting.presentation.controller;
 
 import com.pagely.meetingservice.meeting.application.dto.command.CreateMeetingScheduleCommand;
+import com.pagely.meetingservice.meeting.application.dto.result.MeetingAttendanceResult;
 import com.pagely.meetingservice.meeting.application.dto.result.MeetingJoinResult;
 import com.pagely.meetingservice.meeting.application.dto.result.MeetingResult;
 import com.pagely.meetingservice.meeting.application.dto.result.MeetingScheduleResult;
 import com.pagely.meetingservice.meeting.application.dto.result.MeetingSummaryResult;
+import com.pagely.meetingservice.meeting.application.service.MeetingAttendanceCommandService;
 import com.pagely.meetingservice.meeting.application.service.MeetingCommandService;
 import com.pagely.meetingservice.meeting.application.service.MeetingJoinService;
 import com.pagely.meetingservice.meeting.application.service.MeetingQueryService;
@@ -14,6 +16,7 @@ import com.pagely.meetingservice.meeting.domain.model.MeetingJoinStatus;
 import com.pagely.meetingservice.meeting.presentation.dto.request.CreateMeetingRequest;
 import com.pagely.meetingservice.meeting.presentation.dto.request.CreateMeetingScheduleRequest;
 import com.pagely.meetingservice.meeting.presentation.dto.request.JoinMeetingRequest;
+import com.pagely.meetingservice.meeting.presentation.dto.response.MeetingAttendanceResponse;
 import com.pagely.meetingservice.meeting.presentation.dto.response.MeetingJoinResponse;
 import com.pagely.meetingservice.meeting.presentation.dto.response.MeetingResponse;
 import com.pagely.meetingservice.meeting.presentation.dto.response.MeetingScheduleResponse;
@@ -43,6 +46,7 @@ public class MeetingController {
     private final MeetingJoinService meetingJoinService;
     private final MeetingScheduleCommandService meetingScheduleCommandService;
     private final MeetingScheduleQueryService meetingScheduleQueryService;
+    private final MeetingAttendanceCommandService meetingAttendanceCommandService;
 
     // 모임 생성
     @PostMapping
@@ -130,6 +134,26 @@ public class MeetingController {
         MeetingScheduleResult result = meetingScheduleQueryService.getSchedule(meetingId, scheduleId);
 
         return MeetingScheduleResponse.from(result);
+    }
+
+    // 모임 일정 참석 등록
+    @PostMapping("/{meetingId}/schedules/{scheduleId}/join")
+    public ResponseEntity<MeetingAttendanceResponse> joinMeetingSchedule(
+            @PathVariable UUID meetingId,
+            @PathVariable UUID scheduleId
+    ) {
+        // TODO: 인증 컨텍스트 연결 후 현재 로그인 사용자 ID로 변경
+        UUID userId = UUID.fromString("cccccccc-cccc-cccc-cccc-cccccccccccc");
+
+        MeetingAttendanceResult result = meetingAttendanceCommandService.joinSchedule(
+                meetingId,
+                scheduleId,
+                userId
+        );
+
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(MeetingAttendanceResponse.from(result));
+
     }
 
     // 가입 신청 목록 조회

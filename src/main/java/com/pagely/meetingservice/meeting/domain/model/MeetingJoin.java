@@ -8,6 +8,8 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.time.LocalDateTime;
 import java.util.UUID;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 @Entity
 @Table(name = "p_meeting_recruit")
@@ -26,7 +28,8 @@ public class MeetingJoin {
 
     // 신청 상태
     @Enumerated(EnumType.STRING)
-    @Column(name = "recruit_status", nullable = false)
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
+    @Column(name = "recruit_status", nullable = false, columnDefinition = "meeting_join_status")
     private MeetingJoinStatus joinStatus;
 
     // 신청 내용
@@ -75,49 +78,56 @@ public class MeetingJoin {
 //    }
 
 
+    public static MeetingJoin create( // 가입 신청 생성 팩토리 메서드
+                                      UUID id,
+                                      UUID meetingId,
+                                      UUID recruitUserId,
+                                      String content,
+                                      LocalDateTime createdAt,
+                                      UUID createdBy
+    ) {
+        MeetingJoin join = new MeetingJoin();
+        join.id = id;
+        join.meetingId = meetingId;
+        join.recruitUserId = recruitUserId;
+        join.joinStatus = MeetingJoinStatus.PENDING; // 생성 시 기본 상태를 PENDING으로 고정
+        join.content = content;
+        join.rejectReason = null; // 생성 시 거절 사유 없음
+        join.createdAt = createdAt;
+        join.createdBy = createdBy;
+        return join;
 
-public static MeetingJoin create( // 가입 신청 생성 팩토리 메서드
-    UUID id,
-    UUID meetingId,
-    UUID recruitUserId,
-    String content,
-    LocalDateTime createdAt,
-    UUID createdBy
-){
-    MeetingJoin join = new MeetingJoin();
-    join.id = id;
-    join.meetingId = meetingId;
-    join.recruitUserId = recruitUserId;
-    join.joinStatus = MeetingJoinStatus.PENDING; // 생성 시 기본 상태를 PENDING으로 고정
-    join.content = content;
-    join.rejectReason = null; // 생성 시 거절 사유 없음
-    join.createdAt = createdAt;
-    join.createdBy = createdBy;
-    return join;
+    }
 
-}
-public UUID getId(){
-    return id;
-}
-public UUID getMeetingId(){
-    return meetingId;
-}
-public UUID getRecruitUserId(){
-    return recruitUserId;
-}
-public MeetingJoinStatus getJoinStatus(){
-    return joinStatus;
-}
-public String getContent(){
-    return content;
-}
-public String getRejectReason(){
-    return rejectReason;
-}
-public LocalDateTime getCreatedAt(){
-    return createdAt;
-}
-public UUID getCreatedBy(){
-    return createdBy;
-}
+    public UUID getId() {
+        return id;
+    }
+
+    public UUID getMeetingId() {
+        return meetingId;
+    }
+
+    public UUID getRecruitUserId() {
+        return recruitUserId;
+    }
+
+    public MeetingJoinStatus getJoinStatus() {
+        return joinStatus;
+    }
+
+    public String getContent() {
+        return content;
+    }
+
+    public String getRejectReason() {
+        return rejectReason;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public UUID getCreatedBy() {
+        return createdBy;
+    }
 }

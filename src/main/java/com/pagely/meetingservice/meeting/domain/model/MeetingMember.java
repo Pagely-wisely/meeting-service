@@ -8,6 +8,8 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.time.LocalDateTime;
 import java.util.UUID;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 @Entity
 @Table(name = "p_meeting_members")
@@ -24,14 +26,16 @@ public class MeetingMember {
     @Column(name = "user_id", nullable = false)
     private UUID userId;
 
-    // 멤버 역할
+    // 모임원 역할
     @Enumerated(EnumType.STRING)
-    @Column(name = "role", nullable = false)
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
+    @Column(name = "role", nullable = false, columnDefinition = "meeting_member_role")
     private MeetingMemberRole role;
 
-    // 멤버 상태
+    // 모임원 상태
     @Enumerated(EnumType.STRING)
-    @Column(name = "status", nullable = false)
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
+    @Column(name = "status", nullable = false, columnDefinition = "meeting_member_status")
     private MeetingMemberStatus status;
 
     // 결석 횟수
