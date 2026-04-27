@@ -75,7 +75,7 @@ public class MeetingJoinService {
         Meeting meeting = meetingRepository.findById(command.meetingId())
                 .orElseThrow(() -> new BusinessException(MeetingErrorCode.MEETING_NOT_FOUND));
 
-        validateMeetingchangeableStatus(meeting);
+        validateMeetingChangeableStatus(meeting);
         validateRecruitStatusForApply(meeting.getRecruitStatus());
         validateJoinReapplyPolicy(command.meetingId(), command.recruitUserId());
         validateBlockedMemberStatus(command.meetingId(), command.recruitUserId());
@@ -95,7 +95,7 @@ public class MeetingJoinService {
         Meeting meeting = meetingRepository.findById(meetingId)
                 .orElseThrow(() -> new BusinessException(MeetingErrorCode.MEETING_NOT_FOUND));
 
-        validateMeetingchangeableStatus(meeting);
+        validateMeetingChangeableStatus(meeting);
         if (!meeting.getHostId().equals(hostId)) { // 모임장 검증
             throw new BusinessException(MeetingJoinErrorCode.ONLY_HOST_CAN_APPROVE_JOIN);
         }
@@ -139,7 +139,7 @@ public class MeetingJoinService {
 
     }
 
-    private void validateMeetingchangeableStatus(Meeting meeting) { // 모임 변경 가능 상태 검증
+    private void validateMeetingChangeableStatus(Meeting meeting) { // 모임 변경 가능 상태 검증
         if (meeting.getMeetingStatus() != MeetingStatus.UPCOMING
                 && meeting.getMeetingStatus() != MeetingStatus.IN_PROGRESS) {
             throw new BusinessException(MeetingErrorCode.INVALID_MEETING_STATUS);
