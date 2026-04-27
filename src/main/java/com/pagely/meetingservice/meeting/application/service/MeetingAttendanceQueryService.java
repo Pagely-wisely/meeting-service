@@ -1,6 +1,11 @@
 package com.pagely.meetingservice.meeting.application.service;
 
+import com.pagely.common.exception.BusinessException;
 import com.pagely.meetingservice.meeting.application.dto.result.MeetingAttendanceResult;
+import com.pagely.meetingservice.meeting.domain.exception.MeetingAttendanceErrorCode;
+import com.pagely.meetingservice.meeting.domain.exception.MeetingErrorCode;
+import com.pagely.meetingservice.meeting.domain.exception.MeetingMemberErrorCode;
+import com.pagely.meetingservice.meeting.domain.exception.MeetingScheduleErrorCode;
 import com.pagely.meetingservice.meeting.domain.model.MeetingMember;
 import com.pagely.meetingservice.meeting.domain.model.MeetingSchedule;
 import com.pagely.meetingservice.meeting.domain.repository.MeetingAttendanceRepository;
@@ -31,20 +36,20 @@ public class MeetingAttendanceQueryService {
             UUID userId
     ) {
         meetingRepository.findById(meetingId)
-                .orElseThrow(() -> new IllegalArgumentException("모임이 존재하지 않습니다."));
+                .orElseThrow(() -> new BusinessException(MeetingErrorCode.MEETING_NOT_FOUND));
 
         MeetingSchedule schedule = meetingScheduleRepository.findById(scheduleId)
-                .orElseThrow(() -> new IllegalArgumentException("모임 일정이 존재하지 않습니다."));
+                .orElseThrow(() -> new BusinessException(MeetingScheduleErrorCode.MEETING_SCHEDULE_NOT_FOUND));
 
         if (!schedule.getMeetingId().equals(meetingId)) {
-            throw new IllegalArgumentException("해당 모임에 속한 일정이 아닙니다.");
+            throw new BusinessException(MeetingScheduleErrorCode.SCHEDULE_NOT_FOR_MEETING);
         }
 
         MeetingMember member = meetingMemberRepository.findByMeetingIdAndUserId(meetingId, userId)
-                .orElseThrow(() -> new IllegalArgumentException("모임원만 출석부를 조회할 수 있습니다."));
+                .orElseThrow(() -> new BusinessException(MeetingMemberErrorCode.ONLY_MEETING_MEMBER_ALLOWED));
 
         if (!member.isActive() || !member.isHost()) {
-            throw new IllegalArgumentException("모임장만 전체 출석부를 조회할 수 있습니다.");
+            throw new BusinessException(MeetingAttendanceErrorCode.ONLY_HOST_CAN_VIEW_ATTENDANCES);
         }
 
         return meetingAttendanceRepository.findByScheduleId(scheduleId)
@@ -56,11 +61,11 @@ public class MeetingAttendanceQueryService {
     // 내 출석부 조회
     public List<MeetingAttendanceResult> getMyAttendances(UUID meetingId, UUID userId) {
         meetingRepository.findById(meetingId)
-                .orElseThrow(() -> new IllegalArgumentException("모임이 존재하지 않습니다."));
+                .orElseThrow(() -> new BusinessException(MeetingErrorCode.MEETING_NOT_FOUND));
 
         boolean isMember = meetingMemberRepository.existsByMeetingIdAndUserId(meetingId, userId);
         if (!isMember) {
-            throw new IllegalArgumentException("모임원만 내 출석부를 조회할 수 있습니다.");
+            throw new BusinessException(MeetingMemberErrorCode.ONLY_MEETING_MEMBER_ALLOWED);
         }
 
         return meetingAttendanceRepository.findByMeetingIdAndUserId(meetingId, userId)

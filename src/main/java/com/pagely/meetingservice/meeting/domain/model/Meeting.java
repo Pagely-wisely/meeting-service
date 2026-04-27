@@ -1,5 +1,7 @@
 package com.pagely.meetingservice.meeting.domain.model;
 
+import com.pagely.common.exception.BusinessException;
+import com.pagely.meetingservice.meeting.domain.exception.MeetingErrorCode;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -133,11 +135,11 @@ public class Meeting {
     ) {
         if (recruitMax <= 0) {
             // TODO: 에러처리
-            throw new IllegalArgumentException("모집 인원은 1명 이상이어야 합니다.");
+            throw new BusinessException(MeetingErrorCode.INVALID_RECRUIT_MAX);
         }
         if (recruitStartAt.isAfter(recruitEndAt)) {
             // TODO: 에러처리
-            throw new IllegalArgumentException("모집 시작 시각은 종료 시각보다 늦을 수 없습니다.");
+            throw new BusinessException(MeetingErrorCode.INVALID_RECRUIT_PERIOD);
         }
 
         Meeting meeting = new Meeting();
