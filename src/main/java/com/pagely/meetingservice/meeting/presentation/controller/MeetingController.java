@@ -61,7 +61,7 @@ public class MeetingController {
             @Valid @RequestBody CreateMeetingRequest req
     ) {
         MeetingResult result = meetingCommandService.createMeeting(
-                req.toCommand(req.getHostId()) // DTO → Command 변환
+                req.toCommand(req.hostId()) // DTO → Command 변환
         );
 
         return ResponseEntity.status(HttpStatus.CREATED)
@@ -92,7 +92,7 @@ public class MeetingController {
             @Valid @RequestBody JoinMeetingRequest req
     ) {
         MeetingJoinResult result = meetingJoinService.createMeetingJoin(
-                req.toCommand(meetingId, req.getRecruitUserId())
+                req.toCommand(meetingId, req.recruitUserId())
         );
 
         return ResponseEntity.status(HttpStatus.CREATED)

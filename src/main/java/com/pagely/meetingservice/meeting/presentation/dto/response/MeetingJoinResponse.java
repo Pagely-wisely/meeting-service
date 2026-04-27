@@ -1,37 +1,31 @@
 package com.pagely.meetingservice.meeting.presentation.dto.response;
 
+import com.pagely.meetingservice.meeting.application.dto.result.MeetingJoinResult;
+import com.pagely.meetingservice.meeting.domain.model.MeetingJoinStatus;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-import com.pagely.meetingservice.meeting.application.dto.result.MeetingJoinResult;
-import com.pagely.meetingservice.meeting.domain.model.MeetingJoinStatus;
+// 가입 신청 응답 DTO
+public record MeetingJoinResponse(
+        UUID id, // 가입 신청 ID
+        UUID meetingId, // 모임 ID
+        UUID recruitUserId, // 가입 신청 유저 ID
+        MeetingJoinStatus joinStatus, // 가입 신청 상태
+        String content, // 가입 신청 내용
+        LocalDateTime createdAt, // 생성 일시
+        UUID createdBy // 생성자 ID
+) {
 
-import lombok.Getter;
-import lombok.Builder;
-import lombok.NoArgsConstructor;
-import lombok.AllArgsConstructor;
-
-@Getter
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
-public class MeetingJoinResponse{ // 가입 신청 응답 DTO
-    private UUID id;
-    private UUID meetingId;
-    private UUID recruitUserId;
-    private MeetingJoinStatus joinStatus;
-    private String content;
-    private LocalDateTime createdAt;
-    private UUID createdBy;
-    public static MeetingJoinResponse from(MeetingJoinResult result) { // 결과 DTO → 응답 DTO 변환
-        return MeetingJoinResponse.builder()
-            .id(result.getId())
-            .meetingId(result.getMeetingId())
-            .recruitUserId(result.getRecruitUserId())
-            .joinStatus(result.getJoinStatus())
-            .content(result.getContent())
-            .createdAt(result.getCreatedAt())
-            .createdBy(result.getCreatedBy())
-            .build();
-}
+    // 결과 DTO → 응답 DTO 변환
+    public static MeetingJoinResponse from(MeetingJoinResult result) {
+        return new MeetingJoinResponse(
+                result.id(),
+                result.meetingId(),
+                result.recruitUserId(),
+                result.joinStatus(),
+                result.content(),
+                result.createdAt(),
+                result.createdBy()
+        );
+    }
 }
