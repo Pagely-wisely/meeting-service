@@ -1,8 +1,12 @@
 package com.pagely.meetingservice.meeting.application.service;
 
+import com.pagely.common.exception.BusinessException;
 import com.pagely.meetingservice.meeting.application.dto.command.CreateMeetingScheduleCommand;
 import com.pagely.meetingservice.meeting.application.dto.command.UpdateScheduleStatusCommand;
 import com.pagely.meetingservice.meeting.application.dto.result.MeetingScheduleResult;
+import com.pagely.meetingservice.meeting.domain.exception.MeetingErrorCode;
+import com.pagely.meetingservice.meeting.domain.exception.MeetingMemberErrorCode;
+import com.pagely.meetingservice.meeting.domain.exception.MeetingScheduleErrorCode;
 import com.pagely.meetingservice.meeting.domain.model.Meeting;
 import com.pagely.meetingservice.meeting.domain.model.MeetingAttendance;
 import com.pagely.meetingservice.meeting.domain.model.MeetingMember;
@@ -32,11 +36,11 @@ public class MeetingScheduleCommandService {
     @Transactional
     public MeetingScheduleResult createSchedule(CreateMeetingScheduleCommand command) {
         Meeting meeting = meetingRepository.findById(command.meetingId())
-                .orElseThrow(() -> new IllegalArgumentException("모임이 존재하지 않습니다."));
+                .orElseThrow(() -> new BusinessException(MeetingErrorCode.MEETING_NOT_FOUND));
 
         // TODO: 인증 컨텍스트 연결 후 모임장 권한 검증
-//        if (!meeting.getHostId().equals(...) {
-//            throw new IllegalArgumentException("모임장만 일정을 생성할 수 있습니다.");
+//        if (!meeting.getHostId().equals(hostId)) {
+//            throw new BusinessException(MeetingJoinErrorCode.ONLY_HOST_CAN_APPROVE_JOIN);
 //        }
 
         int nextScheduleNumber = calculateNextScheduleNumber(command.meetingId());
@@ -61,23 +65,23 @@ public class MeetingScheduleCommandService {
     @Transactional
     public MeetingScheduleResult changeScheduleStatus(UpdateScheduleStatusCommand command) {
         meetingRepository.findById(command.meetingId())
-                .orElseThrow(() -> new IllegalArgumentException("모임이 존재하지 않습니다."));
+                .orElseThrow(() -> new BusinessException(MeetingErrorCode.MEETING_NOT_FOUND));
 
         MeetingSchedule schedule = meetingScheduleRepository.findById(command.scheduleId())
-                .orElseThrow(() -> new IllegalArgumentException("모임 일정이 존재하지 않습니다."));
+                .orElseThrow(() -> new BusinessException(MeetingScheduleErrorCode.MEETING_SCHEDULE_NOT_FOUND));
 
         if (!schedule.getMeetingId().equals(command.meetingId())) {
-            throw new IllegalArgumentException("해당 모임에 속한 일정이 아닙니다.");
+            throw new BusinessException(MeetingScheduleErrorCode.SCHEDULE_NOT_FOR_MEETING);
         }
 
         MeetingMember updater = meetingMemberRepository.findByMeetingIdAndUserId(
                         command.meetingId(),
                         command.updatedBy()
                 )
-                .orElseThrow(() -> new IllegalArgumentException("모임원만 일정 상태를 변경할 수 있습니다."));
+                .orElseThrow(() -> new BusinessException(MeetingMemberErrorCode.ONLY_MEETING_MEMBER_ALLOWED));
 
         if (!updater.isActive() || !updater.isHost()) {
-            throw new IllegalArgumentException("모임장만 일정 상태를 변경할 수 있습니다.");
+            throw new BusinessException(MeetingScheduleErrorCode.ONLY_HOST_CAN_CHANGE_SCHEDULE_STATUS);
         }
 
         if (command.status() == MeetingScheduleStatus.FINISHED) {

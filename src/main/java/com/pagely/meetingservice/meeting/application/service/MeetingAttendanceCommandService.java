@@ -1,7 +1,12 @@
 package com.pagely.meetingservice.meeting.application.service;
 
+import com.pagely.common.exception.BusinessException;
 import com.pagely.meetingservice.meeting.application.dto.command.UpdateAttendanceStatusCommand;
 import com.pagely.meetingservice.meeting.application.dto.result.MeetingAttendanceResult;
+import com.pagely.meetingservice.meeting.domain.exception.MeetingAttendanceErrorCode;
+import com.pagely.meetingservice.meeting.domain.exception.MeetingErrorCode;
+import com.pagely.meetingservice.meeting.domain.exception.MeetingMemberErrorCode;
+import com.pagely.meetingservice.meeting.domain.exception.MeetingScheduleErrorCode;
 import com.pagely.meetingservice.meeting.domain.model.MeetingAttendance;
 import com.pagely.meetingservice.meeting.domain.model.MeetingMember;
 import com.pagely.meetingservice.meeting.domain.model.MeetingSchedule;
@@ -30,23 +35,23 @@ public class MeetingAttendanceCommandService {
     @Transactional
     public MeetingAttendanceResult joinSchedule(UUID meetingId, UUID scheduleId, UUID userId) {
         meetingRepository.findById(meetingId)
-                .orElseThrow(() -> new IllegalArgumentException("모임이 존재하지 않습니다."));
+                .orElseThrow(() -> new BusinessException(MeetingErrorCode.MEETING_NOT_FOUND));
 
         MeetingSchedule schedule = meetingScheduleRepository.findById(scheduleId)
-                .orElseThrow(() -> new IllegalArgumentException("모임 일정이 존재하지 않습니다."));
+                .orElseThrow(() -> new BusinessException(MeetingScheduleErrorCode.MEETING_SCHEDULE_NOT_FOUND));
 
         if (!schedule.getMeetingId().equals(meetingId)) {
-            throw new IllegalArgumentException("해당 모임에 속한 일정이 아닙니다.");
+            throw new BusinessException(MeetingScheduleErrorCode.SCHEDULE_NOT_FOR_MEETING);
         }
 
         boolean isMember = meetingMemberRepository.existsByMeetingIdAndUserId(meetingId, userId);
         if (!isMember) {
-            throw new IllegalArgumentException("모임원만 일정 참석 등록이 가능합니다.");
+            throw new BusinessException(MeetingAttendanceErrorCode.ONLY_MEMBER_CAN_JOIN_SCHEDULE);
         }
 
         boolean alreadyJoined = meetingAttendanceRepository.existsByScheduleIdAndUserId(scheduleId, userId);
         if (alreadyJoined) {
-            throw new IllegalArgumentException("이미 참석 등록한 일정입니다.");
+            throw new BusinessException(MeetingAttendanceErrorCode.ATTENDANCE_ALREADY_EXISTS);
         }
 
         LocalDateTime now = LocalDateTime.now();
@@ -69,27 +74,27 @@ public class MeetingAttendanceCommandService {
     @Transactional
     public MeetingAttendanceResult changeAttendanceStatus(UpdateAttendanceStatusCommand command) {
         meetingRepository.findById(command.meetingId())
-                .orElseThrow(() -> new IllegalArgumentException("모임이 존재하지 않습니다."));
+                .orElseThrow(() -> new BusinessException(MeetingErrorCode.MEETING_NOT_FOUND));
 
         MeetingSchedule schedule = meetingScheduleRepository.findById(command.scheduleId())
-                .orElseThrow(() -> new IllegalArgumentException("모임 일정이 존재하지 않습니다."));
+                .orElseThrow(() -> new BusinessException(MeetingScheduleErrorCode.MEETING_SCHEDULE_NOT_FOUND));
 
         if (!schedule.getMeetingId().equals(command.meetingId())) {
-            throw new IllegalArgumentException("해당 모임에 속한 일정이 아닙니다.");
+            throw new BusinessException(MeetingScheduleErrorCode.SCHEDULE_NOT_FOR_MEETING);
         }
 
         if (!schedule.isOngoing()) {
-            throw new IllegalArgumentException("진행중인 일정에서만 출석 상태를 변경할 수 있습니다.");
+            throw new BusinessException(MeetingAttendanceErrorCode.ONLY_ONGOING_SCHEDULE_CAN_CHANGE_ATTENDANCE);
         }
 
         MeetingMember updater = meetingMemberRepository.findByMeetingIdAndUserId(
                         command.meetingId(),
                         command.updatedBy()
                 )
-                .orElseThrow(() -> new IllegalArgumentException("모임원만 출석 상태를 변경할 수 있습니다."));
+                .orElseThrow(() -> new BusinessException(MeetingMemberErrorCode.ONLY_MEETING_MEMBER_ALLOWED));
 
         if (!updater.isActive() || !updater.isHost()) {
-            throw new IllegalArgumentException("모임장만 출석 상태를 변경할 수 있습니다.");
+            throw new BusinessException(MeetingAttendanceErrorCode.ONLY_HOST_CAN_CHANGE_ATTENDANCE);
         }
 
         boolean targetIsMember = meetingMemberRepository.existsByMeetingIdAndUserId(
@@ -97,14 +102,14 @@ public class MeetingAttendanceCommandService {
                 command.userId()
         );
         if (!targetIsMember) {
-            throw new IllegalArgumentException("출석 상태 변경 대상 유저가 해당 모임원이 아닙니다.");
+            throw new BusinessException(MeetingAttendanceErrorCode.ATTENDANCE_USER_NOT_MEETING_MEMBER);
         }
 
         MeetingAttendance attendance = meetingAttendanceRepository.findByScheduleIdAndUserId(
                         command.scheduleId(),
                         command.userId()
                 )
-                .orElseThrow(() -> new IllegalArgumentException("해당 유저의 참석 등록 내역이 없습니다."));
+                .orElseThrow(() -> new BusinessException(MeetingAttendanceErrorCode.ATTENDANCE_NOT_FOUND));
 
         attendance.changeStatus(
                 command.status(),

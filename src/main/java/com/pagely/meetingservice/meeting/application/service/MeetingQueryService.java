@@ -1,7 +1,9 @@
 package com.pagely.meetingservice.meeting.application.service;
 
+import com.pagely.common.exception.BusinessException;
 import com.pagely.meetingservice.meeting.application.dto.result.MeetingResult;
 import com.pagely.meetingservice.meeting.application.dto.result.MeetingSummaryResult;
+import com.pagely.meetingservice.meeting.domain.exception.MeetingErrorCode;
 import com.pagely.meetingservice.meeting.domain.model.Meeting;
 import com.pagely.meetingservice.meeting.domain.repository.MeetingRepository;
 import java.util.List;
@@ -28,7 +30,7 @@ public class MeetingQueryService {
     public MeetingResult getMeeting(UUID meetingId) {
         // TODO: 에러처리
         Meeting meeting = meetingRepository.findById(meetingId)
-                .orElseThrow(() -> new IllegalArgumentException("모임이 존재하지 않습니다"));
+                .orElseThrow(() -> new BusinessException(MeetingErrorCode.MEETING_NOT_FOUND));
 
         return MeetingResult.from(meeting);
     }
