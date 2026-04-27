@@ -11,7 +11,7 @@ import org.springframework.stereotype.Repository;
 // 도메인 Repository 인터페이스의 실제 JPA 구현체
 @Repository
 @RequiredArgsConstructor
-public class MeetingRepositoryImpl implements MeetingRepository {
+public class MeetingRepositoryAdapter implements MeetingRepository {
 
     private final MeetingJpaRepository meetingJpaRepository;
 

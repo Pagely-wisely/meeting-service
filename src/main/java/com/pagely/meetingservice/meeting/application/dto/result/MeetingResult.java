@@ -8,52 +8,48 @@ import com.pagely.meetingservice.meeting.domain.model.RecruitRate;
 import com.pagely.meetingservice.meeting.domain.model.RecruitStatus;
 import java.time.LocalDateTime;
 import java.util.UUID;
-import lombok.Builder;
-import lombok.Getter;
 
 // 모임 상세 조회 결과 DTO
-@Getter
-@Builder
-public class MeetingResult {
+public record MeetingResult(
+        UUID id, // 모임 ID
+        String title, // 모임명
+        String description, // 모임 설명
+        UUID hostId, // 모임장 ID
+        String bookId, // 책 ID
+        MeetingType meetingType, // 모임 유형
+        MeetingStatus meetingStatus, // 모임 상태
+        RecruitStatus recruitStatus, // 모집 상태
+        LocalDateTime recruitStartAt, // 모집 시작 일시
+        LocalDateTime recruitEndAt, // 모집 종료 일시
+        Integer recruitMax, // 모집 정원
+        ReadingLevel readingLevel, // 독서 난이도
+        String ruleMemo, // 규칙 메모
+        RecruitRate recruitRate, // 모집 주기
+        Boolean freePaid, // 무료/유료 여부
+        LocalDateTime createdAt, // 생성 일시
+        UUID createdBy // 생성자 ID
+) {
 
-    private UUID id;
-    private String title;
-    private String description;
-    private UUID hostId;
-    private String bookId;
-    private MeetingType meetingType;
-    private MeetingStatus meetingStatus;
-    private RecruitStatus recruitStatus;
-    private LocalDateTime recruitStartAt;
-    private LocalDateTime recruitEndAt;
-    private Integer recruitMax;
-    private ReadingLevel readingLevel;
-    private String ruleMemo;
-    private RecruitRate recruitRate;
-    private Boolean freePaid;
-    private LocalDateTime createdAt;
-    private UUID createdBy;
-
-    // Entity를 application 결과 DTO로 변환
+    // Entity → application 결과 DTO 변환
     public static MeetingResult from(Meeting meeting) {
-        return MeetingResult.builder()
-                .id(meeting.getId())
-                .title(meeting.getTitle())
-                .description(meeting.getDescription())
-                .hostId(meeting.getHostId())
-                .bookId(meeting.getBookId())
-                .meetingType(meeting.getMeetingType())
-                .meetingStatus(meeting.getMeetingStatus())
-                .recruitStatus(meeting.getRecruitStatus())
-                .recruitStartAt(meeting.getRecruitStartAt())
-                .recruitEndAt(meeting.getRecruitEndAt())
-                .recruitMax(meeting.getRecruitMax())
-                .readingLevel(meeting.getReadingLevel())
-                .ruleMemo(meeting.getRuleMemo())
-                .recruitRate(meeting.getRecruitRate())
-                .freePaid(meeting.isFreePaid())
-                .createdAt(meeting.getCreatedAt())
-                .createdBy(meeting.getCreatedBy())
-                .build();
+        return new MeetingResult(
+                meeting.getId(),
+                meeting.getTitle(),
+                meeting.getDescription(),
+                meeting.getHostId(),
+                meeting.getBookId(),
+                meeting.getMeetingType(),
+                meeting.getMeetingStatus(),
+                meeting.getRecruitStatus(),
+                meeting.getRecruitStartAt(),
+                meeting.getRecruitEndAt(),
+                meeting.getRecruitMax(),
+                meeting.getReadingLevel(),
+                meeting.getRuleMemo(),
+                meeting.getRecruitRate(),
+                meeting.isFreePaid(),
+                meeting.getCreatedAt(),
+                meeting.getCreatedBy()
+        );
     }
 }

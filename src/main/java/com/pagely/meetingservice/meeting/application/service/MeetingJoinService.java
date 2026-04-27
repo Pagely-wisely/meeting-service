@@ -68,7 +68,7 @@ public class MeetingJoinService {
     // 가입 신청 처리
     @Transactional
     public MeetingJoinResult createMeetingJoin(JoinMeetingCommand command) {
-        Meeting meeting = meetingRepository.findById(command.getMeetingId())
+        Meeting meeting = meetingRepository.findById(command.meetingId())
                 .orElseThrow(() -> new IllegalArgumentException("모임이 존재하지 않습니다"));
 
         // 모집 상태가 RECRUITING인지 검사
@@ -77,8 +77,8 @@ public class MeetingJoinService {
         }
 
         // 중복 신청 여부 검사
-        if (meetingJoinRepository.existsByMeetingIdAndRecruitUserId(command.getMeetingId(),
-                command.getRecruitUserId())) {
+        if (meetingJoinRepository.existsByMeetingIdAndRecruitUserId(command.meetingId(),
+                command.recruitUserId())) {
             throw new IllegalStateException("이미 가입 신청한 모임입니다.");
         }
 
