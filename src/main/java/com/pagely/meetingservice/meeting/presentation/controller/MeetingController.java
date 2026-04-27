@@ -1,12 +1,15 @@
 package com.pagely.meetingservice.meeting.presentation.controller;
 
 import com.pagely.meetingservice.meeting.application.dto.command.CreateMeetingScheduleCommand;
+import com.pagely.meetingservice.meeting.application.dto.command.UpdateAttendanceStatusCommand;
+import com.pagely.meetingservice.meeting.application.dto.command.UpdateScheduleStatusCommand;
 import com.pagely.meetingservice.meeting.application.dto.result.MeetingAttendanceResult;
 import com.pagely.meetingservice.meeting.application.dto.result.MeetingJoinResult;
 import com.pagely.meetingservice.meeting.application.dto.result.MeetingResult;
 import com.pagely.meetingservice.meeting.application.dto.result.MeetingScheduleResult;
 import com.pagely.meetingservice.meeting.application.dto.result.MeetingSummaryResult;
 import com.pagely.meetingservice.meeting.application.service.MeetingAttendanceCommandService;
+import com.pagely.meetingservice.meeting.application.service.MeetingAttendanceQueryService;
 import com.pagely.meetingservice.meeting.application.service.MeetingCommandService;
 import com.pagely.meetingservice.meeting.application.service.MeetingJoinService;
 import com.pagely.meetingservice.meeting.application.service.MeetingQueryService;
@@ -16,6 +19,8 @@ import com.pagely.meetingservice.meeting.domain.model.MeetingJoinStatus;
 import com.pagely.meetingservice.meeting.presentation.dto.request.CreateMeetingRequest;
 import com.pagely.meetingservice.meeting.presentation.dto.request.CreateMeetingScheduleRequest;
 import com.pagely.meetingservice.meeting.presentation.dto.request.JoinMeetingRequest;
+import com.pagely.meetingservice.meeting.presentation.dto.request.UpdateAttendanceStatusRequest;
+import com.pagely.meetingservice.meeting.presentation.dto.request.UpdateScheduleStatusRequest;
 import com.pagely.meetingservice.meeting.presentation.dto.response.MeetingAttendanceResponse;
 import com.pagely.meetingservice.meeting.presentation.dto.response.MeetingJoinResponse;
 import com.pagely.meetingservice.meeting.presentation.dto.response.MeetingResponse;
@@ -28,6 +33,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -47,6 +53,7 @@ public class MeetingController {
     private final MeetingScheduleCommandService meetingScheduleCommandService;
     private final MeetingScheduleQueryService meetingScheduleQueryService;
     private final MeetingAttendanceCommandService meetingAttendanceCommandService;
+    private final MeetingAttendanceQueryService meetingAttendanceQueryService;
 
     // 모임 생성
     @PostMapping
@@ -92,14 +99,37 @@ public class MeetingController {
                 .body(MeetingJoinResponse.from(result));
     }
 
+    // 가입 신청 목록 조회
+    @GetMapping("/{meetingId}/join")
+    public List<MeetingJoinResponse> getMeetingJoinList(
+            @PathVariable UUID meetingId,
+            @RequestParam UUID hostId,
+            @RequestParam(required = false) MeetingJoinStatus joinStatus
+    ) {
+        List<MeetingJoinResult> results = meetingJoinService.getMeetingJoinList(
+                meetingId,
+                hostId,
+                joinStatus
+        );
+
+        return results.stream()
+                .map(MeetingJoinResponse::from)
+                .toList();
+    }
+
     // 모임 가입 승인
     @PostMapping("/{meetingId}/join/{joinId}/approve")
     public MeetingJoinResponse approveMeetingJoin(
             @PathVariable UUID meetingId,
             @PathVariable UUID joinId,
-            @RequestParam UUID hostId //TODO: 인증 전 임시 모임장 식별 
+            @RequestParam UUID hostId // TODO: 인증 전 임시 모임장 식별
     ) {
-        MeetingJoinResult result = meetingJoinService.approveMeetingJoin(meetingId, joinId, hostId);
+        MeetingJoinResult result = meetingJoinService.approveMeetingJoin(
+                meetingId,
+                joinId,
+                hostId
+        );
+
         return MeetingJoinResponse.from(result);
     }
 
@@ -164,20 +194,85 @@ public class MeetingController {
 
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(MeetingAttendanceResponse.from(result));
-
     }
 
-    // 가입 신청 목록 조회
-    @GetMapping("/{meetingId}/join")
-    public List<MeetingJoinResponse> getMeetingJoinList(
+    // 모임 일정 상태 변경
+    @PatchMapping("/{meetingId}/schedules/{scheduleId}/status")
+    public ResponseEntity<MeetingScheduleResponse> changeMeetingScheduleStatus(
             @PathVariable UUID meetingId,
-            @RequestParam UUID hostId,
-            @RequestParam(required = false) MeetingJoinStatus joinStatus
+            @PathVariable UUID scheduleId,
+            @Valid @RequestBody UpdateScheduleStatusRequest req
     ) {
-        List<MeetingJoinResult> results = meetingJoinService.getMeetingJoinList(meetingId, hostId, joinStatus);
+        // TODO: 인증 컨텍스트 연결 후 현재 로그인 사용자 ID로 변경
+        UUID updatedBy = UUID.fromString("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
+
+        UpdateScheduleStatusCommand command = req.toCommand(
+                meetingId,
+                scheduleId,
+                updatedBy
+        );
+
+        MeetingScheduleResult result = meetingScheduleCommandService.changeScheduleStatus(command);
+
+        return ResponseEntity.ok(MeetingScheduleResponse.from(result));
+    }
+
+    // 출석부 조회
+    @GetMapping("/{meetingId}/schedules/{scheduleId}/attendances")
+    public List<MeetingAttendanceResponse> getScheduleAttendances(
+            @PathVariable UUID meetingId,
+            @PathVariable UUID scheduleId
+    ) {
+        // TODO: 인증 컨텍스트 연결 후 현재 로그인 사용자 ID로 변경 (테스트 ID : 모임장)
+        UUID userId = UUID.fromString("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
+
+        List<MeetingAttendanceResult> results = meetingAttendanceQueryService.getScheduleAttendances(
+                meetingId,
+                scheduleId,
+                userId
+        );
 
         return results.stream()
-                .map(MeetingJoinResponse::from)
+                .map(MeetingAttendanceResponse::from)
                 .toList();
+    }
+
+    // 내 출석부 조회
+    @GetMapping("/{meetingId}/attendances/me")
+    public List<MeetingAttendanceResponse> getMyAttendances(
+            @PathVariable UUID meetingId
+    ) {
+        // TODO: 인증 컨텍스트 연결 후 현재 로그인 사용자 ID로 변경 (테스트 ID : 모임원)
+        UUID userId = UUID.fromString("cccccccc-cccc-cccc-cccc-cccccccccccc");
+
+        List<MeetingAttendanceResult> results = meetingAttendanceQueryService.getMyAttendances(
+                meetingId,
+                userId
+        );
+
+        return results.stream()
+                .map(MeetingAttendanceResponse::from)
+                .toList();
+    }
+
+    // 출석 상태 변경
+    @PatchMapping("/{meetingId}/schedules/{scheduleId}/attendances")
+    public ResponseEntity<MeetingAttendanceResponse> changeAttendanceStatus(
+            @PathVariable UUID meetingId,
+            @PathVariable UUID scheduleId,
+            @Valid @RequestBody UpdateAttendanceStatusRequest req
+    ) {
+        // TODO: 인증 컨텍스트 연결 후 현재 로그인 사용자 ID로 변경
+        UUID updatedBy = UUID.fromString("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
+
+        UpdateAttendanceStatusCommand command = req.toCommand(
+                meetingId,
+                scheduleId,
+                updatedBy
+        );
+
+        MeetingAttendanceResult result = meetingAttendanceCommandService.changeAttendanceStatus(command);
+
+        return ResponseEntity.ok(MeetingAttendanceResponse.from(result));
     }
 }

@@ -11,6 +11,7 @@ import java.util.UUID;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
+// 모임원 엔티티
 @Entity
 @Table(name = "p_meeting_members")
 public class MeetingMember {
@@ -46,26 +47,41 @@ public class MeetingMember {
     @Column(name = "warning_count", nullable = false)
     private int warningCount;
 
-    // 공통 감사 컬럼
+    // 생성 시각
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
+    // 생성자 ID
     @Column(name = "created_by", nullable = false, updatable = false)
     private UUID createdBy;
 
+    // 수정 시각
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
+    // 수정자 ID
     @Column(name = "updated_by")
     private UUID updatedBy;
 
+    // 삭제 시각
     @Column(name = "deleted_at")
     private LocalDateTime deletedAt;
 
+    // 삭제자 ID
     @Column(name = "deleted_by")
     private UUID deletedBy;
 
     protected MeetingMember() {
+    }
+
+    // 활성 멤버인지 확인
+    public boolean isActive() {
+        return status == MeetingMemberStatus.ACTIVE;
+    }
+
+    // 모임장인지 확인
+    public boolean isHost() {
+        return role == MeetingMemberRole.HOST;
     }
 
     public static MeetingMember create(
@@ -90,13 +106,40 @@ public class MeetingMember {
         return member;
     }
 
-//    // 활성 멤버인지 확인
-//    public boolean isActive() {
-//        return status == MeetingMemberStatus.ACTIVE;
-//    }
-//
-//    // 모임장인지 확인
-//    public boolean isHost() {
-//        return role == MeetingMemberRole.HOST;
-//    }
+    public UUID getId() {
+        return id;
+    }
+
+    public UUID getMeetingId() {
+        return meetingId;
+    }
+
+    public UUID getUserId() {
+        return userId;
+    }
+
+    public MeetingMemberRole getRole() {
+        return role;
+    }
+
+    public MeetingMemberStatus getStatus() {
+        return status;
+    }
+
+    public int getAbsentCount() {
+        return absentCount;
+    }
+
+    public int getWarningCount() {
+        return warningCount;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public UUID getCreatedBy() {
+        return createdBy;
+    }
+
 }

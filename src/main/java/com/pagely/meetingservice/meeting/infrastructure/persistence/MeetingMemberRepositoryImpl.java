@@ -11,7 +11,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
 // 모임 멤버 Repository 구현체
-
+@Repository
 @RequiredArgsConstructor
 public class MeetingMemberRepositoryImpl implements MeetingMemberRepository {
 
