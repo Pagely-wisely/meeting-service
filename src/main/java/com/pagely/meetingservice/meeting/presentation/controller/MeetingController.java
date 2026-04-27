@@ -92,6 +92,17 @@ public class MeetingController {
                 .body(MeetingJoinResponse.from(result));
     }
 
+    // 모임 가입 승인
+    @PostMapping("/{meetingId}/join/{joinId}/approve")
+    public MeetingJoinResponse approveMeetingJoin(
+            @PathVariable UUID meetingId,
+            @PathVariable UUID joinId,
+            @RequestParam UUID hostId //TODO: 인증 전 임시 모임장 식별 
+    ) {
+        MeetingJoinResult result = meetingJoinService.approveMeetingJoin(meetingId, joinId, hostId);
+        return MeetingJoinResponse.from(result);
+    }
+
     // 모임 일정 생성
     @PostMapping("/{meetingId}/schedules")
     public ResponseEntity<MeetingScheduleResponse> createMeetingSchedule(
