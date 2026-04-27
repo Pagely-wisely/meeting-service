@@ -8,18 +8,39 @@ import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+// 모임 멤버 JPA Repository
 public interface JpaMeetingMemberRepository extends JpaRepository<MeetingMember, UUID> {
-
-    Optional<MeetingMember> findByMeetingIdAndUserId(UUID meetingId, UUID userId); // 모임+유저 단건
 
     List<MeetingMember> findByMeetingId(UUID meetingId); // 모임 전체 멤버
 
-    List<MeetingMember> findByMeetingIdAndStatus(UUID meetingId, MeetingMemberStatus status); // 상태별
+    // 모임과 유저 기준 멤버 조회
+    Optional<MeetingMember> findByMeetingIdAndUserIdAndDeletedAtIsNull(UUID meetingId, UUID userId);
 
-    List<MeetingMember> findByMeetingIdAndRole(UUID meetingId, MeetingMemberRole role); // 역할별
+    // 특정 모임의 전체 멤버 조회
+    List<MeetingMember> findAllByMeetingIdAndDeletedAtIsNull(UUID meetingId);
 
-    long countByMeetingIdAndStatus(UUID meetingId, MeetingMemberStatus status); // 정원 계산용 ACTIVE 카운트
+    // 특정 모임의 상태별 멤버 조회
+    List<MeetingMember> findAllByMeetingIdAndStatusAndDeletedAtIsNull(
+            UUID meetingId,
+            MeetingMemberStatus status
+    );
 
-    boolean existsByMeetingIdAndUserId(UUID meetingId, UUID userId); // 이미 멤버인지
+    // 특정 모임의 역할별 멤버 조회
+    List<MeetingMember> findAllByMeetingIdAndRoleAndDeletedAtIsNull(
+            UUID meetingId,
+            MeetingMemberRole role
+    );
 
+    // 특정 모임의 활성 멤버 수 조회
+    long countByMeetingIdAndStatusAndDeletedAtIsNull(
+            UUID meetingId,
+            MeetingMemberStatus status
+    );
+
+    // 특정 유저가 해당 모임의 활성 멤버인지 확인
+    boolean existsByMeetingIdAndUserIdAndStatusAndDeletedAtIsNull(
+            UUID meetingId,
+            UUID userId,
+            MeetingMemberStatus status
+    );
 }
