@@ -13,35 +13,35 @@ import org.springframework.stereotype.Repository;
 @RequiredArgsConstructor
 public class MeetingRepositoryAdapter implements MeetingRepository {
 
-    private final MeetingJpaRepository meetingJpaRepository;
+    private final JpaMeetingRepository jpaMeetingRepository;
 
     // 모임 저장
     @Override
     public Meeting save(Meeting meeting) {
-        return meetingJpaRepository.save(meeting);
+        return jpaMeetingRepository.save(meeting);
     }
 
     // 삭제되지 않은 모임 단건 조회
     @Override
     public Optional<Meeting> findById(UUID meetingId) {
-        return meetingJpaRepository.findByIdAndDeletedAtIsNull(meetingId);
+        return jpaMeetingRepository.findByIdAndDeletedAtIsNull(meetingId);
     }
 
     // 삭제되지 않은 전체 모임 조회
     @Override
     public List<Meeting> findAll() {
-        return meetingJpaRepository.findByDeletedAtIsNull();
+        return jpaMeetingRepository.findByDeletedAtIsNull();
     }
 
     // 모임장 기준 삭제되지 않은 모임 조회
     @Override
     public List<Meeting> findByHostId(UUID hostId) {
-        return meetingJpaRepository.findByHostIdAndDeletedAtIsNull(hostId);
+        return jpaMeetingRepository.findByHostIdAndDeletedAtIsNull(hostId);
     }
 
     // 삭제되지 않은 모임 존재 여부 확인
     @Override
     public boolean existsById(UUID meetingId) {
-        return meetingJpaRepository.existsByIdAndDeletedAtIsNull(meetingId);
+        return jpaMeetingRepository.existsByIdAndDeletedAtIsNull(meetingId);
     }
 }

@@ -7,7 +7,7 @@ import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 // Spring Data JPA 전용 레포지토리
-public interface MeetingJpaRepository extends JpaRepository<Meeting, UUID> {
+public interface JpaMeetingRepository extends JpaRepository<Meeting, UUID> {
 
     // 삭제되지 않은 모임 전체 조회
     List<Meeting> findByDeletedAtIsNull();
