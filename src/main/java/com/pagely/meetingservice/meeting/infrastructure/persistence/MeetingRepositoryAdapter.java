@@ -6,6 +6,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 
 // 도메인 Repository 인터페이스의 실제 JPA 구현체
@@ -29,8 +31,8 @@ public class MeetingRepositoryAdapter implements MeetingRepository {
 
     // 삭제되지 않은 전체 모임 조회
     @Override
-    public List<Meeting> findAll() {
-        return jpaMeetingRepository.findByDeletedAtIsNull();
+    public Page<Meeting> findAll(Pageable pageable) {
+        return jpaMeetingRepository.findByDeletedAtIsNull(pageable);
     }
 
     // 모임장 기준 삭제되지 않은 모임 조회

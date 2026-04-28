@@ -6,9 +6,10 @@ import com.pagely.meetingservice.meeting.application.dto.result.MeetingSummaryRe
 import com.pagely.meetingservice.meeting.domain.exception.MeetingErrorCode;
 import com.pagely.meetingservice.meeting.domain.model.Meeting;
 import com.pagely.meetingservice.meeting.domain.repository.MeetingRepository;
-import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 // 조회 전용 서비스
@@ -19,11 +20,9 @@ public class MeetingQueryService {
     private final MeetingRepository meetingRepository;
 
     // 전체 모임 조회
-    public List<MeetingSummaryResult> getMeetings() {
-        return meetingRepository.findAll()
-                .stream()
-                .map(MeetingSummaryResult::from)
-                .toList();
+    public Page<MeetingSummaryResult> getMeetings(Pageable pageable) {
+        return meetingRepository.findAll(pageable)
+                .map(MeetingSummaryResult::from);
     }
 
     // 모임 상세 조회

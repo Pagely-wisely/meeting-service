@@ -1,5 +1,7 @@
 package com.pagely.meetingservice.meeting.presentation.controller;
 
+import com.pagely.common.pagination.PageRequest;
+import com.pagely.common.pagination.PageResponse;
 import com.pagely.meetingservice.meeting.application.dto.command.CreateMeetingScheduleCommand;
 import com.pagely.meetingservice.meeting.application.dto.command.UpdateAttendanceStatusCommand;
 import com.pagely.meetingservice.meeting.application.dto.command.UpdateScheduleStatusCommand;
@@ -32,6 +34,7 @@ import jakarta.validation.Valid;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -72,12 +75,12 @@ public class MeetingController {
 
     // 모임 전체 조회
     @GetMapping
-    public List<MeetingSummaryResponse> getMeetings() {
-        List<MeetingSummaryResult> results = meetingQueryService.getMeetings();
+    public PageResponse<MeetingSummaryResponse> getMeetings(PageRequest pageRequest) {
+        Page<MeetingSummaryResult> results = meetingQueryService.getMeetings(
+                pageRequest.toPageable()
+        );
 
-        return results.stream()
-                .map(MeetingSummaryResponse::from)
-                .toList();
+        return PageResponse.of(results, MeetingSummaryResponse::from);
     }
 
     // 모임 상세 조회
@@ -238,6 +241,7 @@ public class MeetingController {
 //                .map(MeetingAttendanceResponse::from)
 //                .toList();
 //    }
+
     // 출석부 조회 (Kafka 연결 전 임시 지각/결석 계산 로직 연결 - 이벤트 연결 후 수정 예정)
     @GetMapping("/{meetingId}/schedules/{scheduleId}/attendances")
     public MeetingAttendanceListResponse getScheduleAttendances(
