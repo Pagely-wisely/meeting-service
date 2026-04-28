@@ -35,6 +35,7 @@ import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -161,14 +162,17 @@ public class MeetingController {
 
     // 모임 일정 목록 조회
     @GetMapping("/{meetingId}/schedules")
-    public List<MeetingScheduleResponse> getMeetingSchedules(
-            @PathVariable UUID meetingId
+    public PageResponse<MeetingScheduleResponse> getMeetingSchedules(
+            @PathVariable UUID meetingId,
+            PageRequest pageRequest
     ) {
-        List<MeetingScheduleResult> results = meetingScheduleQueryService.getSchedules(meetingId);
+        // 회차 번호 오름차순 기준으로 페이징 조회
+        Page<MeetingScheduleResult> results = meetingScheduleQueryService.getSchedules(
+                meetingId,
+                pageRequest.toPageable(Sort.by(Sort.Direction.ASC, "scheduleNumber"))
+        );
 
-        return results.stream()
-                .map(MeetingScheduleResponse::from)
-                .toList();
+        return PageResponse.of(results, MeetingScheduleResponse::from);
     }
 
     // 모임 일정 상세 조회

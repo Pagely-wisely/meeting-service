@@ -7,6 +7,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 
 // 모임 일정 Repository 구현체
@@ -58,10 +60,10 @@ public class MeetingScheduleRepositoryAdapter implements MeetingScheduleReposito
         return jpaMeetingScheduleRepository.existsByMeetingIdAndScheduleNumber(meetingId, scheduleNumber);
     }
 
-    // 특정 모임의 삭제되지 않은 일정 목록 조회
+    // 특정 모임의 삭제되지 않은 일정 목록 조회 - 페이징 처리
     @Override
-    public List<MeetingSchedule> findByMeetingIdAndDeletedAtIsNullOrderByScheduleNumberAsc(UUID meetingId) {
-        return jpaMeetingScheduleRepository.findByMeetingIdAndDeletedAtIsNullOrderByScheduleNumberAsc(meetingId);
+    public Page<MeetingSchedule> findByMeetingIdAndDeletedAtIsNull(UUID meetingId, Pageable pageable) {
+        return jpaMeetingScheduleRepository.findByMeetingIdAndDeletedAtIsNull(meetingId, pageable);
     }
 
     // 특정 모임의 삭제되지 않은 일정 상세 조회
