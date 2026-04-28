@@ -1,5 +1,6 @@
 package com.pagely.meetingservice.meeting.domain.model;
 
+import com.pagely.common.entity.BaseEntity;
 import com.pagely.common.exception.BusinessException;
 import com.pagely.meetingservice.meeting.domain.exception.MeetingErrorCode;
 import jakarta.persistence.Column;
@@ -10,14 +11,13 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.time.LocalDateTime;
 import java.util.UUID;
-import lombok.Getter;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
-@Getter
+
 @Entity
 @Table(name = "p_meeting")
-public class Meeting {
+public class Meeting extends BaseEntity{
 
     @Id
     private UUID id;
@@ -88,30 +88,6 @@ public class Meeting {
     @Column(name = "free_paid", nullable = false)
     private boolean freePaid;
 
-    // 생성 시각
-    @Column(name = "created_at", nullable = false, updatable = false)
-    private LocalDateTime createdAt;
-
-    // 생성자 ID
-    @Column(name = "created_by", nullable = false, updatable = false)
-    private UUID createdBy;
-
-    // 수정 시각
-    @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
-
-    // 수정자 ID
-    @Column(name = "updated_by")
-    private UUID updatedBy;
-
-    // 삭제 시각
-    @Column(name = "deleted_at")
-    private LocalDateTime deletedAt;
-
-    // 삭제자 ID
-    @Column(name = "deleted_by")
-    private UUID deletedBy;
-
     protected Meeting() {
     }
 
@@ -129,9 +105,7 @@ public class Meeting {
             ReadingLevel readingLevel,
             String ruleMemo,
             RecruitRate recruitRate,
-            boolean freePaid,
-            LocalDateTime createdAt,
-            UUID createdBy
+            boolean freePaid
     ) {
         if (recruitMax <= 0) {
             throw new BusinessException(MeetingErrorCode.INVALID_RECRUIT_MAX);
@@ -156,8 +130,6 @@ public class Meeting {
         meeting.ruleMemo = ruleMemo;
         meeting.recruitRate = recruitRate;
         meeting.freePaid = freePaid;
-        meeting.createdAt = createdAt;
-        meeting.createdBy = createdBy;
         return meeting;
     }
 

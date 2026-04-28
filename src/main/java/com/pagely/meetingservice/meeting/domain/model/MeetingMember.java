@@ -11,10 +11,12 @@ import java.util.UUID;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
+import com.pagely.common.entity.BaseEntity;
+
 // 모임원 엔티티
 @Entity
 @Table(name = "p_meeting_members")
-public class MeetingMember {
+public class MeetingMember extends BaseEntity {
 
     @Id
     private UUID id;

@@ -39,9 +39,7 @@ public record CreateMeetingCommand(
                 readingLevel,
                 ruleMemo,
                 recruitRate,
-                Boolean.TRUE.equals(freePaid),
-                now,
-                createdBy
+                Boolean.TRUE.equals(freePaid)
         );
     }
 }

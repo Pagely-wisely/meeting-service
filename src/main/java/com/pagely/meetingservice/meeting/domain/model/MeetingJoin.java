@@ -1,5 +1,6 @@
 package com.pagely.meetingservice.meeting.domain.model;
 
+import com.pagely.common.entity.BaseEntity;
 import com.pagely.common.exception.BusinessException;
 import com.pagely.meetingservice.meeting.domain.exception.MeetingJoinErrorCode;
 import jakarta.persistence.Column;
@@ -15,7 +16,7 @@ import org.hibernate.type.SqlTypes;
 
 @Entity
 @Table(name = "p_meeting_recruit")
-public class MeetingJoin {
+public class MeetingJoin extends BaseEntity {
 
     @Id
     private UUID id;
