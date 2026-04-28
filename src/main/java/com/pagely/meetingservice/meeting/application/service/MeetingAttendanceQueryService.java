@@ -1,6 +1,7 @@
 package com.pagely.meetingservice.meeting.application.service;
 
 import com.pagely.common.exception.BusinessException;
+import com.pagely.meetingservice.meeting.application.dto.result.AttendanceStatisticsResult;
 import com.pagely.meetingservice.meeting.application.dto.result.MeetingAttendanceResult;
 import com.pagely.meetingservice.meeting.domain.exception.MeetingAttendanceErrorCode;
 import com.pagely.meetingservice.meeting.domain.exception.MeetingErrorCode;
@@ -35,6 +36,68 @@ public class MeetingAttendanceQueryService {
             UUID scheduleId,
             UUID userId
     ) {
+        validateScheduleAttendanceViewPermission(meetingId, scheduleId, userId);
+
+        // 해당 일정에 등록된 출석 정보를 조회 후 결과 DTO로 변환
+        return meetingAttendanceRepository.findByScheduleId(scheduleId)
+                .stream()
+                .map(MeetingAttendanceResult::from)
+                .toList();
+    }
+
+    // 특정 일정의 출석 통계 조회
+    public AttendanceStatisticsResult getScheduleAttendanceStatistics(
+            UUID meetingId,
+            UUID scheduleId,
+            UUID userId
+    ) {
+        // 출석부 조회 권한과 동일한 권한 정책을 적용한다.
+        // 즉, 특정 일정의 전체 출석 통계는 ACTIVE 상태의 모임장만 조회 가능하다.
+        validateScheduleAttendanceViewPermission(meetingId, scheduleId, userId);
+
+        List<MeetingAttendanceResult> attendances = meetingAttendanceRepository.findByScheduleId(scheduleId)
+                .stream()
+                .map(MeetingAttendanceResult::from)
+                .toList();
+
+        // 조회된 출석 상태를 기준으로 통계를 즉시 계산한다.
+        // 지각 3회 = 결석 1회 환산 정책도 여기서 계산된다.
+        return AttendanceStatisticsResult.from(attendances);
+    }
+
+    // 내 출석부 조회
+    public List<MeetingAttendanceResult> getMyAttendances(UUID meetingId, UUID userId) {
+        validateMyAttendanceViewPermission(meetingId, userId);
+
+        // 해당 사용자의 모임 내 출석 이력을 조회 후 결과 DTO로 변환
+        return meetingAttendanceRepository.findByMeetingIdAndUserId(meetingId, userId)
+                .stream()
+                .map(MeetingAttendanceResult::from)
+                .toList();
+    }
+
+    // 내 출석 통계 조회
+    public AttendanceStatisticsResult getMyAttendanceStatistics(UUID meetingId, UUID userId) {
+        // 내 출석 통계는 해당 모임의 멤버만 조회 가능하다.
+        validateMyAttendanceViewPermission(meetingId, userId);
+
+        List<MeetingAttendanceResult> attendances = meetingAttendanceRepository.findByMeetingIdAndUserId(meetingId,
+                        userId)
+                .stream()
+                .map(MeetingAttendanceResult::from)
+                .toList();
+
+        // 내 출석 이력을 기준으로 출석/지각/결석/사유결석 통계를 계산한다.
+        // LATE 상태 자체는 유지하고, 지각 3회 환산은 통계 값에만 반영한다.
+        return AttendanceStatisticsResult.from(attendances);
+    }
+
+    // 특정 일정 출석부 조회 권한 검증
+    private void validateScheduleAttendanceViewPermission(
+            UUID meetingId,
+            UUID scheduleId,
+            UUID userId
+    ) {
         // 요청한 모임이 실제 존재하는지 확인
         meetingRepository.findById(meetingId)
                 .orElseThrow(() -> new BusinessException(MeetingErrorCode.MEETING_NOT_FOUND));
@@ -58,16 +121,10 @@ public class MeetingAttendanceQueryService {
         if (!member.isActive() || !member.isHost()) {
             throw new BusinessException(MeetingAttendanceErrorCode.ONLY_HOST_CAN_VIEW_ATTENDANCES);
         }
-
-        // 해당 일정에 등록된 출석 정보를 조회 후 결과 DTO로 변환
-        return meetingAttendanceRepository.findByScheduleId(scheduleId)
-                .stream()
-                .map(MeetingAttendanceResult::from)
-                .toList();
     }
 
-    // 내 출석부 조회
-    public List<MeetingAttendanceResult> getMyAttendances(UUID meetingId, UUID userId) {
+    // 내 출석부 조회 권한 검증
+    private void validateMyAttendanceViewPermission(UUID meetingId, UUID userId) {
         // 요청한 모임이 실제 존재하는지 확인
         meetingRepository.findById(meetingId)
                 .orElseThrow(() -> new BusinessException(MeetingErrorCode.MEETING_NOT_FOUND));
@@ -78,11 +135,5 @@ public class MeetingAttendanceQueryService {
         if (!isMember) {
             throw new BusinessException(MeetingMemberErrorCode.ONLY_MEETING_MEMBER_ALLOWED);
         }
-
-        // 해당 사용자의 모임 내 출석 이력을 조회 후 결과 DTO로 변환
-        return meetingAttendanceRepository.findByMeetingIdAndUserId(meetingId, userId)
-                .stream()
-                .map(MeetingAttendanceResult::from)
-                .toList();
     }
 }
