@@ -24,14 +24,13 @@ import com.pagely.meetingservice.meeting.presentation.dto.request.CreateMeetingS
 import com.pagely.meetingservice.meeting.presentation.dto.request.JoinMeetingRequest;
 import com.pagely.meetingservice.meeting.presentation.dto.request.UpdateAttendanceStatusRequest;
 import com.pagely.meetingservice.meeting.presentation.dto.request.UpdateScheduleStatusRequest;
-import com.pagely.meetingservice.meeting.presentation.dto.response.MeetingAttendanceListResponse;
+import com.pagely.meetingservice.meeting.presentation.dto.response.MeetingAttendancePageResponse;
 import com.pagely.meetingservice.meeting.presentation.dto.response.MeetingAttendanceResponse;
 import com.pagely.meetingservice.meeting.presentation.dto.response.MeetingJoinResponse;
 import com.pagely.meetingservice.meeting.presentation.dto.response.MeetingResponse;
 import com.pagely.meetingservice.meeting.presentation.dto.response.MeetingScheduleResponse;
 import com.pagely.meetingservice.meeting.presentation.dto.response.MeetingSummaryResponse;
 import jakarta.validation.Valid;
-import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -67,14 +66,14 @@ public class MeetingController {
             @Valid @RequestBody CreateMeetingRequest req
     ) {
         MeetingResult result = meetingCommandService.createMeeting(
-                req.toCommand(req.hostId()) // DTO → Command 변환
+                req.toCommand(req.hostId())
         );
 
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(MeetingResponse.from(result));
     }
 
-    // 모임 전체 조회
+    // 모임 전체 조회 - 페이징 처리
     @GetMapping
     public PageResponse<MeetingSummaryResponse> getMeetings(PageRequest pageRequest) {
         Page<MeetingSummaryResult> results = meetingQueryService.getMeetings(
@@ -105,22 +104,23 @@ public class MeetingController {
                 .body(MeetingJoinResponse.from(result));
     }
 
-    // 가입 신청 목록 조회
+    // 가입 신청 목록 조회 - 페이징 처리
     @GetMapping("/{meetingId}/join")
-    public List<MeetingJoinResponse> getMeetingJoinList(
+    public PageResponse<MeetingJoinResponse> getMeetingJoinList(
             @PathVariable UUID meetingId,
             @RequestParam UUID hostId,
-            @RequestParam(required = false) MeetingJoinStatus joinStatus
+            @RequestParam(required = false) MeetingJoinStatus joinStatus,
+            PageRequest pageRequest
     ) {
-        List<MeetingJoinResult> results = meetingJoinService.getMeetingJoinList(
+        // 최신 가입 신청이 먼저 보이도록 생성일 내림차순 정렬
+        Page<MeetingJoinResult> results = meetingJoinService.getMeetingJoinList(
                 meetingId,
                 hostId,
-                joinStatus
+                joinStatus,
+                pageRequest.toPageable(Sort.by(Sort.Direction.DESC, "createdAt"))
         );
 
-        return results.stream()
-                .map(MeetingJoinResponse::from)
-                .toList();
+        return PageResponse.of(results, MeetingJoinResponse::from);
     }
 
     // 모임 가입 승인
@@ -160,7 +160,7 @@ public class MeetingController {
                 .body(MeetingScheduleResponse.from(result));
     }
 
-    // 모임 일정 목록 조회
+    // 모임 일정 목록 조회 - 페이징 처리
     @GetMapping("/{meetingId}/schedules")
     public PageResponse<MeetingScheduleResponse> getMeetingSchedules(
             @PathVariable UUID meetingId,
@@ -182,7 +182,6 @@ public class MeetingController {
             @PathVariable UUID scheduleId
     ) {
         MeetingScheduleResult result = meetingScheduleQueryService.getSchedule(meetingId, scheduleId);
-
         return MeetingScheduleResponse.from(result);
     }
 
@@ -226,86 +225,57 @@ public class MeetingController {
         return ResponseEntity.ok(MeetingScheduleResponse.from(result));
     }
 
-    // 출석부 조회
-//    @GetMapping("/{meetingId}/schedules/{scheduleId}/attendances")
-//    public List<MeetingAttendanceResponse> getScheduleAttendances(
-//            @PathVariable UUID meetingId,
-//            @PathVariable UUID scheduleId
-//    ) {
-//        // TODO: 인증 컨텍스트 연결 후 현재 로그인 사용자 ID로 변경 (테스트 ID : 모임장)
-//        UUID userId = UUID.fromString("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
-//
-//        List<MeetingAttendanceResult> results = meetingAttendanceQueryService.getScheduleAttendances(
-//                meetingId,
-//                scheduleId,
-//                userId
-//        );
-//
-//        return results.stream()
-//                .map(MeetingAttendanceResponse::from)
-//                .toList();
-//    }
-
-    // 출석부 조회 (Kafka 연결 전 임시 지각/결석 계산 로직 연결 - 이벤트 연결 후 수정 예정)
+    // 특정 일정 출석부 조회 - 페이징 처리
     @GetMapping("/{meetingId}/schedules/{scheduleId}/attendances")
-    public MeetingAttendanceListResponse getScheduleAttendances(
+    public MeetingAttendancePageResponse getScheduleAttendances(
             @PathVariable UUID meetingId,
-            @PathVariable UUID scheduleId
+            @PathVariable UUID scheduleId,
+            PageRequest pageRequest
     ) {
-        // TODO: 인증 컨텍스트 연결 후 현재 로그인 사용자 ID로 변경 (테스트 ID : 모임장)
+        // TODO: 인증 컨텍스트 연결 후 현재 로그인 사용자 ID로 변경 (테스트 ID: 모임장)
         UUID userId = UUID.fromString("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
 
-        List<MeetingAttendanceResult> results = meetingAttendanceQueryService.getScheduleAttendances(
+        // 출석 목록은 페이징 처리
+        Page<MeetingAttendanceResult> results = meetingAttendanceQueryService.getScheduleAttendances(
                 meetingId,
                 scheduleId,
-                userId
+                userId,
+                pageRequest.toPageable(Sort.by(Sort.Direction.ASC, "createdAt"))
         );
 
+        // 출석 통계는 전체 출석 기록 기준으로 계산
         AttendanceStatisticsResult statistics = meetingAttendanceQueryService.getScheduleAttendanceStatistics(
                 meetingId,
                 scheduleId,
                 userId
         );
 
-        return MeetingAttendanceListResponse.from(results, statistics);
+        return MeetingAttendancePageResponse.from(results, statistics);
     }
 
-    // 내 출석부 조회
-//    @GetMapping("/{meetingId}/attendances/me")
-//    public List<MeetingAttendanceResponse> getMyAttendances(
-//            @PathVariable UUID meetingId
-//    ) {
-//        // TODO: 인증 컨텍스트 연결 후 현재 로그인 사용자 ID로 변경 (테스트 ID : 모임원)
-//        UUID userId = UUID.fromString("cccccccc-cccc-cccc-cccc-cccccccccccc");
-//
-//        List<MeetingAttendanceResult> results = meetingAttendanceQueryService.getMyAttendances(
-//                meetingId,
-//                userId
-//        );
-//
-//        return results.stream()
-//                .map(MeetingAttendanceResponse::from)
-//                .toList();
-//    }
-    // 내 출석부 조회 (Kafka 연결 전 임시 지각/결석 계산 로직 연결 - 이벤트 연결 후 수정 예정)
+    // 내 출석부 조회 - 페이징 처리
     @GetMapping("/{meetingId}/attendances/me")
-    public MeetingAttendanceListResponse getMyAttendances(
-            @PathVariable UUID meetingId
+    public MeetingAttendancePageResponse getMyAttendances(
+            @PathVariable UUID meetingId,
+            PageRequest pageRequest
     ) {
-        // TODO: 인증 컨텍스트 연결 후 현재 로그인 사용자 ID로 변경 (테스트 ID : 모임원)
+        // TODO: 인증 컨텍스트 연결 후 현재 로그인 사용자 ID로 변경 (테스트 ID: 모임원)
         UUID userId = UUID.fromString("cccccccc-cccc-cccc-cccc-cccccccccccc");
 
-        List<MeetingAttendanceResult> results = meetingAttendanceQueryService.getMyAttendances(
+        // 내 출석 이력은 페이징 처리
+        Page<MeetingAttendanceResult> results = meetingAttendanceQueryService.getMyAttendances(
                 meetingId,
-                userId
+                userId,
+                pageRequest.toPageable(Sort.by(Sort.Direction.ASC, "createdAt"))
         );
 
+        // 내 출석 통계는 전체 출석 이력 기준으로 계산
         AttendanceStatisticsResult statistics = meetingAttendanceQueryService.getMyAttendanceStatistics(
                 meetingId,
                 userId
         );
 
-        return MeetingAttendanceListResponse.from(results, statistics);
+        return MeetingAttendancePageResponse.from(results, statistics);
     }
 
     // 출석 상태 변경
