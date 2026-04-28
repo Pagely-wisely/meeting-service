@@ -167,6 +167,17 @@ public class Meeting {
         this.updatedAt = LocalDateTime.now();
     }
 
+        // 모집 마감 시간이 지났으면 RECRUITING → CLOSED 로 전이
+    public void applyRecruitClosedIfPeriodEnded(LocalDateTime now, UUID updatedBy) {
+        if (this.recruitStatus != RecruitStatus.RECRUITING) {
+            return;
+        }
+        if (!now.isAfter(this.recruitEndAt)) {
+            return;
+        }
+        changeRecruitStatus(RecruitStatus.CLOSED, updatedBy);
+    }
+
     public UUID getId() {
         return id;
     }
