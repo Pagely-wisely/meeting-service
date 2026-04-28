@@ -33,6 +33,8 @@ public class MeetingJoinService {
     private final MeetingJoinListSortPolicy meetingJoinListSortPolicy;
     private final MeetingMemberRepository meetingMemberRepository;
 
+    private static final UUID RECRUIT_PERIOD = UUID.fromString("00000000-0000-0000-0000-000000000000");
+
     // 생성자
     public MeetingJoinService(MeetingJoinRepository meetingJoinRepository,
                               MeetingRepository meetingRepository,
@@ -49,6 +51,8 @@ public class MeetingJoinService {
                                                       MeetingJoinStatus joinStatus) {
         Meeting meeting = meetingRepository.findById(meetingId) // 모임 조회    
                 .orElseThrow(() -> new BusinessException(MeetingErrorCode.MEETING_NOT_FOUND));
+
+        syncRecruitClosedPeriod(meeting);
 
         if (!meeting.getHostId().equals(requesterHostId)) { // 모임장 검증
             throw new BusinessException(MeetingJoinErrorCode.ONLY_HOST_CAN_VIEW_JOIN_LIST);
@@ -75,6 +79,8 @@ public class MeetingJoinService {
         Meeting meeting = meetingRepository.findById(command.meetingId())
                 .orElseThrow(() -> new BusinessException(MeetingErrorCode.MEETING_NOT_FOUND));
 
+        syncRecruitClosedPeriod(meeting);
+
         validateMeetingChangeableStatus(meeting);
         validateRecruitStatusForApply(meeting.getRecruitStatus());
         validateJoinReapplyPolicy(command.meetingId(), command.recruitUserId());
@@ -95,7 +101,9 @@ public class MeetingJoinService {
         Meeting meeting = meetingRepository.findById(meetingId)
                 .orElseThrow(() -> new BusinessException(MeetingErrorCode.MEETING_NOT_FOUND));
 
+        syncRecruitClosedPeriod(meeting);
         validateMeetingChangeableStatus(meeting);
+
         if (!meeting.getHostId().equals(hostId)) { // 모임장 검증
             throw new BusinessException(MeetingJoinErrorCode.ONLY_HOST_CAN_APPROVE_JOIN);
         }
@@ -196,4 +204,14 @@ public class MeetingJoinService {
             meeting.changeRecruitStatus(RecruitStatus.CLOSED, updaterId);
         }
     }
+
+    private void syncRecruitClosedPeriod(Meeting meeting) { //모집기간 종료 시 CLOSED 동기화
+        RecruitStatus before = meeting.getRecruitStatus();
+        LocalDateTime now = LocalDateTime.now();
+        meeting.applyRecruitClosedIfPeriodEnded(now, RECRUIT_PERIOD);
+        if(before != meeting.getRecruitStatus()) {
+            meetingRepository.save(meeting);
+        }
+    }
+
 }
