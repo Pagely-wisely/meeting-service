@@ -105,18 +105,52 @@ public class MeetingSchedule {
     }
 
     // 모임 일정 상태 변경
-    public void changeStatus(MeetingScheduleStatus status, UUID updatedBy) {
-        this.status = status;
+    public void changeStatus(MeetingScheduleStatus newStatus, UUID updatedBy) {
+        // null 상태가 들어오면 잘못된 상태가 엔티티에 저장될 수 있으므로 즉시 차단
+        if (newStatus == null) {
+            throw new BusinessException(MeetingScheduleErrorCode.INVALID_SCHEDULE_STATUS_CHANGE);
+        }
+
+        // 동일 상태로 변경하는 것은 허용하지 않음
+        if (this.status == newStatus) {
+            throw new BusinessException(MeetingScheduleErrorCode.INVALID_SCHEDULE_STATUS_CHANGE);
+        }
+
+        // FINISHED, CANCELLED 상태는 최종 상태이므로 더 이상 변경 불가
+        if (this.status == MeetingScheduleStatus.FINISHED
+                || this.status == MeetingScheduleStatus.CANCELLED) {
+            throw new BusinessException(MeetingScheduleErrorCode.INVALID_SCHEDULE_STATUS_CHANGE);
+        }
+
+        // SCHEDULED 상태에서는 ONGOING 또는 CANCELLED 로만 변경 가능
+        if (this.status == MeetingScheduleStatus.SCHEDULED) {
+            if (newStatus != MeetingScheduleStatus.ONGOING
+                    && newStatus != MeetingScheduleStatus.CANCELLED) {
+                throw new BusinessException(MeetingScheduleErrorCode.INVALID_SCHEDULE_STATUS_CHANGE);
+            }
+        }
+
+        // ONGOING 상태에서는 FINISHED 로만 변경 가능
+        if (this.status == MeetingScheduleStatus.ONGOING) {
+            if (newStatus != MeetingScheduleStatus.FINISHED) {
+                throw new BusinessException(MeetingScheduleErrorCode.INVALID_SCHEDULE_STATUS_CHANGE);
+            }
+        }
+
+        this.status = newStatus;
         this.updatedBy = updatedBy;
         this.updatedAt = LocalDateTime.now();
     }
 
     // 모임 일정 종료 처리
     public void finish(List<MeetingAttendance> attendances, UUID updatedBy) {
+        // 일정 상태를 FINISHED로 변경한다.
+        // 상태 전이 규칙은 changeStatus() 내부에서 검증한다.
         changeStatus(MeetingScheduleStatus.FINISHED, updatedBy);
 
+        // 일정 종료 시 출석 상태가 아직 PENDING인 참석자만 ABSENT로 확정한다.
         for (MeetingAttendance attendance : attendances) {
-            attendance.markAbsentIfNotAttended(updatedBy);
+            attendance.markAbsentIfPending(updatedBy);
         }
     }
 

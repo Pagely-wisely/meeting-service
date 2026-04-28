@@ -35,16 +35,26 @@ public class MeetingScheduleCommandService {
     // 모임 일정 생성
     @Transactional
     public MeetingScheduleResult createSchedule(CreateMeetingScheduleCommand command) {
+        // 일정을 생성할 모임이 실제 존재하는지 확인
         Meeting meeting = meetingRepository.findById(command.meetingId())
                 .orElseThrow(() -> new BusinessException(MeetingErrorCode.MEETING_NOT_FOUND));
 
-        // TODO: 인증 컨텍스트 연결 후 모임장 권한 검증
-//        if (!meeting.getHostId().equals(hostId)) {
-//            throw new BusinessException(MeetingJoinErrorCode.ONLY_HOST_CAN_APPROVE_JOIN);
-//        }
+        // 요청자가 해당 모임의 멤버인지 확인
+        MeetingMember requester = meetingMemberRepository.findByMeetingIdAndUserId(
+                        command.meetingId(),
+                        command.requesterId()
+                )
+                .orElseThrow(() -> new BusinessException(MeetingMemberErrorCode.ONLY_MEETING_MEMBER_ALLOWED));
 
+        // 일정 생성은 ACTIVE 상태의 모임장만 가능
+        if (!requester.isActive() || !requester.isHost()) {
+            throw new BusinessException(MeetingScheduleErrorCode.ONLY_HOST_CAN_CREATE_SCHEDULE);
+        }
+
+        // 기존 일정 중 가장 큰 회차 번호를 기준으로 다음 회차 번호 계산
         int nextScheduleNumber = calculateNextScheduleNumber(command.meetingId());
 
+        // 일정 엔티티 생성
         MeetingSchedule schedule = MeetingSchedule.create(
                 UUID.randomUUID(),
                 command.meetingId(),
@@ -53,9 +63,10 @@ public class MeetingScheduleCommandService {
                 command.startAt(),
                 command.discussionNote(),
                 LocalDateTime.now(),
-                command.createdBy()
+                command.requesterId()
         );
 
+        // 생성된 일정 저장 후 결과 DTO로 변환
         MeetingSchedule savedSchedule = meetingScheduleRepository.save(schedule);
 
         return MeetingScheduleResult.from(savedSchedule);
@@ -64,26 +75,33 @@ public class MeetingScheduleCommandService {
     // 모임 일정 상태 변경
     @Transactional
     public MeetingScheduleResult changeScheduleStatus(UpdateScheduleStatusCommand command) {
+        // 요청한 모임이 실제 존재하는지 확인
         meetingRepository.findById(command.meetingId())
                 .orElseThrow(() -> new BusinessException(MeetingErrorCode.MEETING_NOT_FOUND));
 
+        // 상태를 변경할 일정 조회
         MeetingSchedule schedule = meetingScheduleRepository.findById(command.scheduleId())
                 .orElseThrow(() -> new BusinessException(MeetingScheduleErrorCode.MEETING_SCHEDULE_NOT_FOUND));
 
+        // 일정이 요청한 모임에 속한 일정인지 검증
         if (!schedule.getMeetingId().equals(command.meetingId())) {
             throw new BusinessException(MeetingScheduleErrorCode.SCHEDULE_NOT_FOR_MEETING);
         }
 
+        // 상태 변경 요청자가 해당 모임의 멤버인지 확인
         MeetingMember updater = meetingMemberRepository.findByMeetingIdAndUserId(
                         command.meetingId(),
                         command.updatedBy()
                 )
                 .orElseThrow(() -> new BusinessException(MeetingMemberErrorCode.ONLY_MEETING_MEMBER_ALLOWED));
 
+        // 일정 상태 변경은 ACTIVE 상태의 모임장만 가능
         if (!updater.isActive() || !updater.isHost()) {
             throw new BusinessException(MeetingScheduleErrorCode.ONLY_HOST_CAN_CHANGE_SCHEDULE_STATUS);
         }
 
+        // FINISHED 상태로 변경하는 경우 출석 정보를 함께 확인하여 일정 종료 처리
+        // 그 외 상태 변경은 도메인의 상태 전이 규칙에 따라 처리
         if (command.status() == MeetingScheduleStatus.FINISHED) {
             List<MeetingAttendance> attendances = meetingAttendanceRepository.findByScheduleId(command.scheduleId());
             schedule.finish(attendances, command.updatedBy());
@@ -96,6 +114,8 @@ public class MeetingScheduleCommandService {
 
     // 다음 회차 번호 계산
     private int calculateNextScheduleNumber(UUID meetingId) {
+        // 해당 모임의 기존 일정 목록에서 가장 큰 회차 번호를 찾고 +1
+        // 일정이 하나도 없으면 1회차부터 시작
         return meetingScheduleRepository.findByMeetingId(meetingId)
                 .stream()
                 .mapToInt(MeetingSchedule::getScheduleNumber)

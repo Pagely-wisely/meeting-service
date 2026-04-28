@@ -15,24 +15,24 @@ import org.springframework.stereotype.Repository;
 @RequiredArgsConstructor
 public class MeetingMemberRepositoryAdapter implements MeetingMemberRepository {
 
-    private final MeetingMemberJpaRepository meetingMemberJpaRepository;
+    private final JpaMeetingMemberRepository jpaMeetingMemberRepository;
 
     // 멤버 저장
     @Override
     public MeetingMember save(MeetingMember meetingMember) {
-        return meetingMemberJpaRepository.save(meetingMember);
+        return jpaMeetingMemberRepository.save(meetingMember);
     }
 
     // ID로 멤버 조회
     @Override
     public Optional<MeetingMember> findById(UUID memberId) {
-        return meetingMemberJpaRepository.findById(memberId);
+        return jpaMeetingMemberRepository.findById(memberId);
     }
 
     // 모임과 유저 기준 멤버 조회
     @Override
     public Optional<MeetingMember> findByMeetingIdAndUserId(UUID meetingId, UUID userId) {
-        return meetingMemberJpaRepository.findByMeetingIdAndUserIdAndDeletedAtIsNull(
+        return jpaMeetingMemberRepository.findByMeetingIdAndUserIdAndDeletedAtIsNull(
                 meetingId,
                 userId
         );
@@ -41,7 +41,7 @@ public class MeetingMemberRepositoryAdapter implements MeetingMemberRepository {
     // 특정 모임의 전체 멤버 조회
     @Override
     public List<MeetingMember> findByMeetingId(UUID meetingId) {
-        return meetingMemberJpaRepository.findAllByMeetingIdAndDeletedAtIsNull(meetingId);
+        return jpaMeetingMemberRepository.findAllByMeetingIdAndDeletedAtIsNull(meetingId);
     }
 
     // 특정 모임의 상태별 멤버 조회
@@ -50,7 +50,7 @@ public class MeetingMemberRepositoryAdapter implements MeetingMemberRepository {
             UUID meetingId,
             MeetingMemberStatus status
     ) {
-        return meetingMemberJpaRepository.findAllByMeetingIdAndStatusAndDeletedAtIsNull(
+        return jpaMeetingMemberRepository.findAllByMeetingIdAndStatusAndDeletedAtIsNull(
                 meetingId,
                 status
         );
@@ -62,7 +62,7 @@ public class MeetingMemberRepositoryAdapter implements MeetingMemberRepository {
             UUID meetingId,
             MeetingMemberRole role
     ) {
-        return meetingMemberJpaRepository.findAllByMeetingIdAndRoleAndDeletedAtIsNull(
+        return jpaMeetingMemberRepository.findAllByMeetingIdAndRoleAndDeletedAtIsNull(
                 meetingId,
                 role
         );
@@ -71,7 +71,7 @@ public class MeetingMemberRepositoryAdapter implements MeetingMemberRepository {
     // 특정 모임의 활성 멤버 수 조회
     @Override
     public long countByMeetingIdAndStatus(UUID meetingId, MeetingMemberStatus status) {
-        return meetingMemberJpaRepository.countByMeetingIdAndStatusAndDeletedAtIsNull(
+        return jpaMeetingMemberRepository.countByMeetingIdAndStatusAndDeletedAtIsNull(
                 meetingId,
                 status
         );
@@ -80,7 +80,7 @@ public class MeetingMemberRepositoryAdapter implements MeetingMemberRepository {
     // 특정 유저가 해당 모임의 활성 멤버인지 확인
     @Override
     public boolean existsByMeetingIdAndUserId(UUID meetingId, UUID userId) {
-        return meetingMemberJpaRepository.existsByMeetingIdAndUserIdAndStatusAndDeletedAtIsNull(
+        return jpaMeetingMemberRepository.existsByMeetingIdAndUserIdAndStatusAndDeletedAtIsNull(
                 meetingId,
                 userId,
                 MeetingMemberStatus.ACTIVE

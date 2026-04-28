@@ -14,24 +14,24 @@ import org.springframework.stereotype.Repository;
 @RequiredArgsConstructor
 public class MeetingScheduleRepositoryAdapter implements MeetingScheduleRepository {
 
-    private final MeetingScheduleJpaRepository meetingScheduleJpaRepository;
+    private final JpaMeetingScheduleRepository jpaMeetingScheduleRepository;
 
     // 일정 저장
     @Override
     public MeetingSchedule save(MeetingSchedule meetingSchedule) {
-        return meetingScheduleJpaRepository.save(meetingSchedule);
+        return jpaMeetingScheduleRepository.save(meetingSchedule);
     }
 
     // ID로 일정 조회
     @Override
     public Optional<MeetingSchedule> findById(UUID scheduleId) {
-        return meetingScheduleJpaRepository.findById(scheduleId);
+        return jpaMeetingScheduleRepository.findById(scheduleId);
     }
 
     // 특정 모임의 전체 일정 조회
     @Override
     public List<MeetingSchedule> findByMeetingId(UUID meetingId) {
-        return meetingScheduleJpaRepository.findByMeetingId(meetingId);
+        return jpaMeetingScheduleRepository.findByMeetingId(meetingId);
     }
 
     // 특정 모임의 상태별 일정 조회
@@ -40,7 +40,7 @@ public class MeetingScheduleRepositoryAdapter implements MeetingScheduleReposito
             UUID meetingId,
             MeetingScheduleStatus status
     ) {
-        return meetingScheduleJpaRepository.findByMeetingIdAndStatus(meetingId, status);
+        return jpaMeetingScheduleRepository.findByMeetingIdAndStatus(meetingId, status);
     }
 
     // 모임 + 회차 번호로 일정 조회
@@ -49,19 +49,19 @@ public class MeetingScheduleRepositoryAdapter implements MeetingScheduleReposito
             UUID meetingId,
             int scheduleNumber
     ) {
-        return meetingScheduleJpaRepository.findByMeetingIdAndScheduleNumber(meetingId, scheduleNumber);
+        return jpaMeetingScheduleRepository.findByMeetingIdAndScheduleNumber(meetingId, scheduleNumber);
     }
 
     // 회차 번호 중복 여부 확인
     @Override
     public boolean existsByMeetingIdAndScheduleNumber(UUID meetingId, int scheduleNumber) {
-        return meetingScheduleJpaRepository.existsByMeetingIdAndScheduleNumber(meetingId, scheduleNumber);
+        return jpaMeetingScheduleRepository.existsByMeetingIdAndScheduleNumber(meetingId, scheduleNumber);
     }
 
     // 특정 모임의 삭제되지 않은 일정 목록 조회
     @Override
     public List<MeetingSchedule> findByMeetingIdAndDeletedAtIsNullOrderByScheduleNumberAsc(UUID meetingId) {
-        return meetingScheduleJpaRepository.findByMeetingIdAndDeletedAtIsNullOrderByScheduleNumberAsc(meetingId);
+        return jpaMeetingScheduleRepository.findByMeetingIdAndDeletedAtIsNullOrderByScheduleNumberAsc(meetingId);
     }
 
     // 특정 모임의 삭제되지 않은 일정 상세 조회
@@ -70,7 +70,7 @@ public class MeetingScheduleRepositoryAdapter implements MeetingScheduleReposito
             UUID scheduleId,
             UUID meetingId
     ) {
-        return meetingScheduleJpaRepository.findByIdAndMeetingIdAndDeletedAtIsNull(scheduleId, meetingId);
+        return jpaMeetingScheduleRepository.findByIdAndMeetingIdAndDeletedAtIsNull(scheduleId, meetingId);
     }
 
 }

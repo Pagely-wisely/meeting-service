@@ -47,6 +47,10 @@ public class MeetingMember {
     @Column(name = "warning_count", nullable = false)
     private int warningCount;
 
+    // 지각 횟수
+    @Column(name = "late_count", nullable = false)
+    private int lateCount;
+
     // 생성 시각
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -101,9 +105,56 @@ public class MeetingMember {
         member.status = status;
         member.absentCount = 0;
         member.warningCount = 0;
+        member.lateCount = 0;
         member.createdAt = createdAt;
         member.createdBy = createdBy;
         return member;
+    }
+
+    // 출석 상태에 따른 패널티 반영
+    public void applyAttendancePenalty(AttendanceStatus attendanceStatus, UUID updatedBy) {
+        // null 상태가 들어오면 패널티 기준을 판단할 수 없으므로 즉시 종료
+        // 필요하면 BusinessException으로 바꿔도 됨
+        if (attendanceStatus == null) {
+            return;
+        }
+
+        // 정상 출석과 사유 인정 결석은 패널티 대상이 아님
+        if (attendanceStatus == AttendanceStatus.ATTENDED
+                || attendanceStatus == AttendanceStatus.EXCUSED) {
+            return;
+        }
+
+        // 지각 처리
+        if (attendanceStatus == AttendanceStatus.LATE) {
+            this.lateCount++;
+
+            // 현재 임시 정책:
+            // 지각 1회는 경고 1회로 누적한다.
+            this.warningCount++;
+
+            // 지각 3회마다 결석 1회로 환산한다.
+            // lateCount = 3  -> absentCount +1
+            // lateCount = 6  -> absentCount +1
+            // lateCount = 9  -> absentCount +1
+            // 실제 LATE 상태를 ABSENT로 바꾸지는 않고,
+            // 모임원 패널티 카운트에만 환산 결석을 누적한다.
+            if (this.lateCount % 3 == 0) {
+                this.absentCount++;
+            }
+        }
+
+        // 결석 처리
+        if (attendanceStatus == AttendanceStatus.ABSENT) {
+            this.absentCount++;
+        }
+
+        this.updatedBy = updatedBy;
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    public int getLateCount() {
+        return lateCount;
     }
 
     public UUID getId() {

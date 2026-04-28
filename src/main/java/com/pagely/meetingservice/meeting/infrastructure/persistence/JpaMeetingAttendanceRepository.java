@@ -8,7 +8,7 @@ import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 // 모임 일정 참석 JPA Repository
-public interface MeetingAttendanceJpaRepository extends JpaRepository<MeetingAttendance, UUID> {
+public interface JpaMeetingAttendanceRepository extends JpaRepository<MeetingAttendance, UUID> {
 
     // 일정 + 유저 기준 참석 조회
     Optional<MeetingAttendance> findByScheduleIdAndUserIdAndDeletedAtIsNull(UUID scheduleId, UUID userId);

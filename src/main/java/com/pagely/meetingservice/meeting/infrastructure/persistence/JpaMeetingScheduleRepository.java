@@ -8,7 +8,7 @@ import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 // 모임 일정 JPA Repository
-public interface MeetingScheduleJpaRepository extends JpaRepository<MeetingSchedule, UUID> {
+public interface JpaMeetingScheduleRepository extends JpaRepository<MeetingSchedule, UUID> {
 
     // 특정 모임의 일정 목록 조회
     List<MeetingSchedule> findByMeetingId(UUID meetingId);

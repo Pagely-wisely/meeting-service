@@ -3,6 +3,7 @@ package com.pagely.meetingservice.meeting.presentation.controller;
 import com.pagely.meetingservice.meeting.application.dto.command.CreateMeetingScheduleCommand;
 import com.pagely.meetingservice.meeting.application.dto.command.UpdateAttendanceStatusCommand;
 import com.pagely.meetingservice.meeting.application.dto.command.UpdateScheduleStatusCommand;
+import com.pagely.meetingservice.meeting.application.dto.result.AttendanceStatisticsResult;
 import com.pagely.meetingservice.meeting.application.dto.result.MeetingAttendanceResult;
 import com.pagely.meetingservice.meeting.application.dto.result.MeetingJoinResult;
 import com.pagely.meetingservice.meeting.application.dto.result.MeetingResult;
@@ -21,6 +22,7 @@ import com.pagely.meetingservice.meeting.presentation.dto.request.CreateMeetingS
 import com.pagely.meetingservice.meeting.presentation.dto.request.JoinMeetingRequest;
 import com.pagely.meetingservice.meeting.presentation.dto.request.UpdateAttendanceStatusRequest;
 import com.pagely.meetingservice.meeting.presentation.dto.request.UpdateScheduleStatusRequest;
+import com.pagely.meetingservice.meeting.presentation.dto.response.MeetingAttendanceListResponse;
 import com.pagely.meetingservice.meeting.presentation.dto.response.MeetingAttendanceResponse;
 import com.pagely.meetingservice.meeting.presentation.dto.response.MeetingJoinResponse;
 import com.pagely.meetingservice.meeting.presentation.dto.response.MeetingResponse;
@@ -145,7 +147,7 @@ public class MeetingController {
                 req.startAt(),
                 req.discussionNote(),
                 // TODO: 인증 컨텍스트 연결 후 현재 로그인 사용자 ID로 변경
-                UUID.fromString("00000000-0000-0000-0000-000000000001")
+                UUID.fromString("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa")
         );
 
         MeetingScheduleResult result = meetingScheduleCommandService.createSchedule(command);
@@ -218,8 +220,27 @@ public class MeetingController {
     }
 
     // 출석부 조회
+//    @GetMapping("/{meetingId}/schedules/{scheduleId}/attendances")
+//    public List<MeetingAttendanceResponse> getScheduleAttendances(
+//            @PathVariable UUID meetingId,
+//            @PathVariable UUID scheduleId
+//    ) {
+//        // TODO: 인증 컨텍스트 연결 후 현재 로그인 사용자 ID로 변경 (테스트 ID : 모임장)
+//        UUID userId = UUID.fromString("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
+//
+//        List<MeetingAttendanceResult> results = meetingAttendanceQueryService.getScheduleAttendances(
+//                meetingId,
+//                scheduleId,
+//                userId
+//        );
+//
+//        return results.stream()
+//                .map(MeetingAttendanceResponse::from)
+//                .toList();
+//    }
+    // 출석부 조회 (Kafka 연결 전 임시 지각/결석 계산 로직 연결 - 이벤트 연결 후 수정 예정)
     @GetMapping("/{meetingId}/schedules/{scheduleId}/attendances")
-    public List<MeetingAttendanceResponse> getScheduleAttendances(
+    public MeetingAttendanceListResponse getScheduleAttendances(
             @PathVariable UUID meetingId,
             @PathVariable UUID scheduleId
     ) {
@@ -232,14 +253,35 @@ public class MeetingController {
                 userId
         );
 
-        return results.stream()
-                .map(MeetingAttendanceResponse::from)
-                .toList();
+        AttendanceStatisticsResult statistics = meetingAttendanceQueryService.getScheduleAttendanceStatistics(
+                meetingId,
+                scheduleId,
+                userId
+        );
+
+        return MeetingAttendanceListResponse.from(results, statistics);
     }
 
     // 내 출석부 조회
+//    @GetMapping("/{meetingId}/attendances/me")
+//    public List<MeetingAttendanceResponse> getMyAttendances(
+//            @PathVariable UUID meetingId
+//    ) {
+//        // TODO: 인증 컨텍스트 연결 후 현재 로그인 사용자 ID로 변경 (테스트 ID : 모임원)
+//        UUID userId = UUID.fromString("cccccccc-cccc-cccc-cccc-cccccccccccc");
+//
+//        List<MeetingAttendanceResult> results = meetingAttendanceQueryService.getMyAttendances(
+//                meetingId,
+//                userId
+//        );
+//
+//        return results.stream()
+//                .map(MeetingAttendanceResponse::from)
+//                .toList();
+//    }
+    // 내 출석부 조회 (Kafka 연결 전 임시 지각/결석 계산 로직 연결 - 이벤트 연결 후 수정 예정)
     @GetMapping("/{meetingId}/attendances/me")
-    public List<MeetingAttendanceResponse> getMyAttendances(
+    public MeetingAttendanceListResponse getMyAttendances(
             @PathVariable UUID meetingId
     ) {
         // TODO: 인증 컨텍스트 연결 후 현재 로그인 사용자 ID로 변경 (테스트 ID : 모임원)
@@ -250,9 +292,12 @@ public class MeetingController {
                 userId
         );
 
-        return results.stream()
-                .map(MeetingAttendanceResponse::from)
-                .toList();
+        AttendanceStatisticsResult statistics = meetingAttendanceQueryService.getMyAttendanceStatistics(
+                meetingId,
+                userId
+        );
+
+        return MeetingAttendanceListResponse.from(results, statistics);
     }
 
     // 출석 상태 변경

@@ -1,5 +1,7 @@
 package com.pagely.meetingservice.meeting.domain.model;
 
+import com.pagely.common.exception.BusinessException;
+import com.pagely.meetingservice.meeting.domain.exception.MeetingAttendanceErrorCode;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -117,20 +119,42 @@ public class MeetingAttendance {
     }
 
     // 출석 상태 변경
-    public void changeStatus(AttendanceStatus status, String note, UUID updatedBy) {
-        this.status = status;
+    public void changeStatus(AttendanceStatus newStatus, String note, UUID updatedBy) {
+        // null 상태가 들어오면 DB flush 시점까지 오류가 지연될 수 있으므로
+        // 도메인 메서드 진입 시점에 즉시 차단한다.
+        if (newStatus == null) {
+            throw new BusinessException(MeetingAttendanceErrorCode.INVALID_ATTENDANCE_STATUS_CHANGE);
+        }
+
+        // 출석 상태는 최초 PENDING 상태에서만 변경 가능
+        if (this.status != AttendanceStatus.PENDING) {
+            throw new BusinessException(MeetingAttendanceErrorCode.ATTENDANCE_STATUS_ALREADY_CHANGED);
+        }
+
+        // PENDING 으로 다시 변경하는 것은 허용하지 않음
+        if (newStatus == AttendanceStatus.PENDING) {
+            throw new BusinessException(MeetingAttendanceErrorCode.INVALID_ATTENDANCE_STATUS_CHANGE);
+        }
+
+        this.status = newStatus;
         this.note = note;
         this.checkedAt = LocalDateTime.now();
         this.updatedBy = updatedBy;
         this.updatedAt = LocalDateTime.now();
     }
 
-    // 출석 완료가 아닌 경우 결석 처리
-    public void markAbsentIfNotAttended(UUID updatedBy) {
-        if (this.status == AttendanceStatus.ATTENDED) {
+    // 일정 종료 시 자동 결석 처리
+    public void markAbsentIfPending(UUID updatedBy) {
+        // 일정 종료 시 자동 결석 처리 대상은 PENDING 상태뿐이다.
+        // 이미 출석 상태가 확정된 ATTENDED, LATE, EXCUSED, ABSENT는 절대 덮어쓰지 않는다.
+
+        // 일정 종료 시점까지 아무 출석 처리도 되지 않은 PENDING 참석자만
+        // 자동으로 ABSENT 상태로 확정한다.
+        if (this.status != AttendanceStatus.PENDING) {
             return;
         }
 
+        // PENDING 상태인 참석자를 일정 종료로 인해 자동 결석 처리한다.
         this.status = AttendanceStatus.ABSENT;
         this.note = "일정 종료로 인한 자동 결석 처리";
         this.checkedAt = LocalDateTime.now();
