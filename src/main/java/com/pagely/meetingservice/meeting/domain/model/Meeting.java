@@ -134,11 +134,9 @@ public class Meeting {
             UUID createdBy
     ) {
         if (recruitMax <= 0) {
-            // TODO: 에러처리
             throw new BusinessException(MeetingErrorCode.INVALID_RECRUIT_MAX);
         }
         if (recruitStartAt.isAfter(recruitEndAt)) {
-            // TODO: 에러처리
             throw new BusinessException(MeetingErrorCode.INVALID_RECRUIT_PERIOD);
         }
 
@@ -161,6 +159,23 @@ public class Meeting {
         meeting.createdAt = createdAt;
         meeting.createdBy = createdBy;
         return meeting;
+    }
+
+    public void changeRecruitStatus(RecruitStatus recruitStatus, UUID updatedBy) { // 모집 상태 변경
+        this.recruitStatus = recruitStatus;
+        this.updatedBy = updatedBy;
+        this.updatedAt = LocalDateTime.now();
+    }
+
+        // 모집 마감 시간이 지났으면 RECRUITING → CLOSED 로 전이
+    public void applyRecruitClosedIfPeriodEnded(LocalDateTime now, UUID updatedBy) {
+        if (this.recruitStatus != RecruitStatus.RECRUITING) {
+            return;
+        }
+        if (!now.isAfter(this.recruitEndAt)) {
+            return;
+        }
+        changeRecruitStatus(RecruitStatus.CLOSED, updatedBy);
     }
 
     public UUID getId() {
