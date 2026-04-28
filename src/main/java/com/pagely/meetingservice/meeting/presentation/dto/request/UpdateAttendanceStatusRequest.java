@@ -1,6 +1,8 @@
 package com.pagely.meetingservice.meeting.presentation.dto.request;
 
+import com.pagely.common.exception.BusinessException;
 import com.pagely.meetingservice.meeting.application.dto.command.UpdateAttendanceStatusCommand;
+import com.pagely.meetingservice.meeting.domain.exception.MeetingAttendanceErrorCode;
 import com.pagely.meetingservice.meeting.domain.model.AttendanceStatus;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -10,21 +12,31 @@ import java.util.UUID;
 public record UpdateAttendanceStatusRequest(
 
         @NotNull
-        UUID userId, // 출석 상태를 변경할 대상 유저 ID
+        UUID userId,
 
         @NotNull
-        AttendanceStatus status, // 변경할 출석 상태
+        AttendanceStatus status,
 
         @Size(max = 255)
-        String note // 출석 상태 변경 비고
+        String note
 ) {
 
-    // 요청 DTO → 출석 상태 변경 커맨드 변환
+    private static boolean isUpdatableStatus(AttendanceStatus status) {
+        return status == AttendanceStatus.ATTENDED
+                || status == AttendanceStatus.LATE
+                || status == AttendanceStatus.ABSENT
+                || status == AttendanceStatus.EXCUSED;
+    }
+
     public UpdateAttendanceStatusCommand toCommand(
             UUID meetingId,
             UUID scheduleId,
             UUID updatedBy
     ) {
+        if (!isUpdatableStatus(status)) {
+            throw new BusinessException(MeetingAttendanceErrorCode.INVALID_ATTENDANCE_STATUS);
+        }
+
         return new UpdateAttendanceStatusCommand(
                 meetingId,
                 scheduleId,

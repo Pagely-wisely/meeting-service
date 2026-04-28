@@ -137,15 +137,18 @@ public class MeetingAttendance {
         this.updatedAt = LocalDateTime.now();
     }
 
-    // 출석 완료, 지각, 사유 결석은 자동 결석 처리 대상이 아님
-    public void markAbsentIfNotAttended(UUID updatedBy) {
-        if (this.status == AttendanceStatus.ATTENDED
-                || this.status == AttendanceStatus.LATE
-                || this.status == AttendanceStatus.EXCUSED) {
+    // 일정 종료 시 자동 결석 처리
+    public void markAbsentIfPending(UUID updatedBy) {
+        // 일정 종료 시 자동 결석 처리 대상은 PENDING 상태뿐이다.
+        // 이미 출석 상태가 확정된 ATTENDED, LATE, EXCUSED, ABSENT는 절대 덮어쓰지 않는다.
+
+        // 일정 종료 시점까지 아무 출석 처리도 되지 않은 PENDING 참석자만
+        // 자동으로 ABSENT 상태로 확정한다.
+        if (this.status != AttendanceStatus.PENDING) {
             return;
         }
 
-        // 아직 PENDING 상태인 참석자만 일정 종료 시 자동 결석 처리
+        // PENDING 상태인 참석자를 일정 종료로 인해 자동 결석 처리한다.
         this.status = AttendanceStatus.ABSENT;
         this.note = "일정 종료로 인한 자동 결석 처리";
         this.checkedAt = LocalDateTime.now();

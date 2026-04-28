@@ -139,10 +139,13 @@ public class MeetingSchedule {
 
     // 모임 일정 종료 처리
     public void finish(List<MeetingAttendance> attendances, UUID updatedBy) {
+        // 일정 상태를 FINISHED로 변경한다.
+        // 상태 전이 규칙은 changeStatus() 내부에서 검증한다.
         changeStatus(MeetingScheduleStatus.FINISHED, updatedBy);
 
+        // 일정 종료 시 출석 상태가 아직 PENDING인 참석자만 ABSENT로 확정한다.
         for (MeetingAttendance attendance : attendances) {
-            attendance.markAbsentIfNotAttended(updatedBy);
+            attendance.markAbsentIfPending(updatedBy);
         }
     }
 
