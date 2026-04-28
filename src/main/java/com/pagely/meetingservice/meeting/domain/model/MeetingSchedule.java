@@ -1,5 +1,7 @@
 package com.pagely.meetingservice.meeting.domain.model;
 
+import com.pagely.common.exception.BusinessException;
+import com.pagely.meetingservice.meeting.domain.exception.MeetingScheduleErrorCode;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -86,7 +88,7 @@ public class MeetingSchedule {
             UUID createdBy
     ) {
         if (startAt == null) {
-            throw new IllegalArgumentException("일정 시작 시각은 필수입니다.");
+            throw new BusinessException(MeetingScheduleErrorCode.INVALID_SCHEDULE_START_AT);
         }
 
         MeetingSchedule schedule = new MeetingSchedule();
