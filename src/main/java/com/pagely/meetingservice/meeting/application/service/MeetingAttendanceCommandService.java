@@ -153,6 +153,16 @@ public class MeetingAttendanceCommandService {
                 command.updatedBy()
         );
 
+        // 출석 상태 변경 결과에 따라 모임원의 패널티 카운트를 누적한다.
+        // - LATE: 지각 수 +1, 경고 수 +1, 지각 3회마다 결석 수 +1
+        // - ABSENT: 결석 수 +1
+        // - ATTENDED, EXCUSED: 패널티 없음
+        //
+        // 주의:
+        // 출석 상태는 PENDING에서 한 번만 변경 가능하므로,
+        // 동일 출석 건에 대한 패널티 중복 누적도 함께 방지된다.
+        targetMember.applyAttendancePenalty(finalStatus, command.updatedBy());
+
         return MeetingAttendanceResult.from(attendance);
     }
 }

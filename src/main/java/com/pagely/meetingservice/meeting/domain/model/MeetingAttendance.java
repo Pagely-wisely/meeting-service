@@ -120,6 +120,12 @@ public class MeetingAttendance {
 
     // 출석 상태 변경
     public void changeStatus(AttendanceStatus newStatus, String note, UUID updatedBy) {
+        // null 상태가 들어오면 DB flush 시점까지 오류가 지연될 수 있으므로
+        // 도메인 메서드 진입 시점에 즉시 차단한다.
+        if (newStatus == null) {
+            throw new BusinessException(MeetingAttendanceErrorCode.INVALID_ATTENDANCE_STATUS_CHANGE);
+        }
+
         // 출석 상태는 최초 PENDING 상태에서만 변경 가능
         if (this.status != AttendanceStatus.PENDING) {
             throw new BusinessException(MeetingAttendanceErrorCode.ATTENDANCE_STATUS_ALREADY_CHANGED);

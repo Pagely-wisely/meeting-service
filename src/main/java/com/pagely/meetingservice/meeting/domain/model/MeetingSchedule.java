@@ -106,6 +106,11 @@ public class MeetingSchedule {
 
     // 모임 일정 상태 변경
     public void changeStatus(MeetingScheduleStatus newStatus, UUID updatedBy) {
+        // null 상태가 들어오면 잘못된 상태가 엔티티에 저장될 수 있으므로 즉시 차단
+        if (newStatus == null) {
+            throw new BusinessException(MeetingScheduleErrorCode.INVALID_SCHEDULE_STATUS_CHANGE);
+        }
+
         // 동일 상태로 변경하는 것은 허용하지 않음
         if (this.status == newStatus) {
             throw new BusinessException(MeetingScheduleErrorCode.INVALID_SCHEDULE_STATUS_CHANGE);
