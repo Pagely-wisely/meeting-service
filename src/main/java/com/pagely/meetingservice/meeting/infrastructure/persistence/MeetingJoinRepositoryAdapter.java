@@ -3,9 +3,10 @@ package com.pagely.meetingservice.meeting.infrastructure.persistence;
 import com.pagely.meetingservice.meeting.domain.model.MeetingJoin;
 import com.pagely.meetingservice.meeting.domain.model.MeetingJoinStatus;
 import com.pagely.meetingservice.meeting.domain.repository.MeetingJoinRepository;
-import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 
 @Repository
@@ -28,15 +29,24 @@ public class MeetingJoinRepositoryAdapter implements MeetingJoinRepository {
         return jpaMeetingJoinRepository.findById(joinId);
     }
 
+    // 모임 기준 가입 신청 목록 조회 - 페이징 처리
     @Override
-    public List<MeetingJoin> findByMeetingId(UUID meetingId) { // 모임 기준 목록 조회 메서드
-        return jpaMeetingJoinRepository.findByMeetingId(meetingId);
+    public Page<MeetingJoin> findByMeetingId(UUID meetingId, Pageable pageable) {
+        return jpaMeetingJoinRepository.findByMeetingId(meetingId, pageable);
     }
 
+    // 모임 + 상태 기준 가입 신청 목록 조회 - 페이징 처리
     @Override
-    public List<MeetingJoin> findByMeetingIdAndJoinStatus(UUID meetingId,
-                                                          MeetingJoinStatus joinStatus) { // 모임+상태 목록 조회 메서드
-        return jpaMeetingJoinRepository.findByMeetingIdAndJoinStatus(meetingId, joinStatus);
+    public Page<MeetingJoin> findByMeetingIdAndJoinStatus(
+            UUID meetingId,
+            MeetingJoinStatus joinStatus,
+            Pageable pageable
+    ) {
+        return jpaMeetingJoinRepository.findByMeetingIdAndJoinStatus(
+                meetingId,
+                joinStatus,
+                pageable
+        );
     }
 
     @Override
