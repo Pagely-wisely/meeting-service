@@ -13,8 +13,6 @@ import java.util.UUID;
 
 // 모임 생성 요청 DTO
 public record CreateMeetingRequest(
-        @NotNull
-        UUID hostId, // 모임장 ID
 
         String bookId, // 책 ID
 
@@ -51,9 +49,9 @@ public record CreateMeetingRequest(
 ) {
 
     // 요청 DTO → 생성 커맨드 변환
-    public CreateMeetingCommand toCommand(UUID createdBy) {
+    public CreateMeetingCommand toCommand(UUID currentUserId) {
         return new CreateMeetingCommand(
-                hostId,
+            currentUserId,
                 bookId,
                 title,
                 description,
@@ -65,7 +63,7 @@ public record CreateMeetingRequest(
                 ruleMemo,
                 recruitRate,
                 freePaid,
-                createdBy
+                currentUserId // createdBy
         );
     }
 }
