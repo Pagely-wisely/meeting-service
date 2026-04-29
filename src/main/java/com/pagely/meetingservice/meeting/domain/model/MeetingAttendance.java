@@ -1,5 +1,6 @@
 package com.pagely.meetingservice.meeting.domain.model;
 
+import com.pagely.common.entity.BaseEntity;
 import com.pagely.common.exception.BusinessException;
 import com.pagely.meetingservice.meeting.domain.exception.MeetingAttendanceErrorCode;
 import jakarta.persistence.Column;
@@ -16,7 +17,7 @@ import org.hibernate.type.SqlTypes;
 // 모임 일정 참석 엔티티
 @Entity
 @Table(name = "p_meeting_attendance")
-public class MeetingAttendance {
+public class MeetingAttendance extends BaseEntity {
 
     @Id
     private UUID id;
@@ -46,30 +47,6 @@ public class MeetingAttendance {
     // 비고
     @Column(name = "note", length = 255)
     private String note;
-
-    // 생성일시
-    @Column(name = "created_at", nullable = false, updatable = false)
-    private LocalDateTime createdAt;
-
-    // 생성자 ID
-    @Column(name = "created_by", nullable = false, updatable = false)
-    private UUID createdBy;
-
-    // 수정일시
-    @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
-
-    // 수정자 ID
-    @Column(name = "updated_by")
-    private UUID updatedBy;
-
-    // 삭제일시
-    @Column(name = "deleted_at")
-    private LocalDateTime deletedAt;
-
-    // 삭제자 ID
-    @Column(name = "deleted_by")
-    private UUID deletedBy;
 
     protected MeetingAttendance() {
     }
@@ -190,11 +167,4 @@ public class MeetingAttendance {
         return note;
     }
 
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public UUID getCreatedBy() {
-        return createdBy;
-    }
 }

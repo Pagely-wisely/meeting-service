@@ -1,5 +1,6 @@
 package com.pagely.meetingservice.meeting.domain.model;
 
+import com.pagely.common.entity.BaseEntity;
 import com.pagely.common.exception.BusinessException;
 import com.pagely.meetingservice.meeting.domain.exception.MeetingJoinErrorCode;
 import jakarta.persistence.Column;
@@ -15,7 +16,7 @@ import org.hibernate.type.SqlTypes;
 
 @Entity
 @Table(name = "p_meeting_recruit")
-public class MeetingJoin {
+public class MeetingJoin extends BaseEntity {
 
     @Id
     private UUID id;
@@ -41,25 +42,6 @@ public class MeetingJoin {
     // 거절 사유
     @Column(name = "reject_reason")
     private String rejectReason;
-
-    // 공통 감사 컬럼
-    @Column(name = "created_at", nullable = false, updatable = false)
-    private LocalDateTime createdAt;
-
-    @Column(name = "created_by", nullable = false, updatable = false)
-    private UUID createdBy;
-
-    @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
-
-    @Column(name = "updated_by")
-    private UUID updatedBy;
-
-    @Column(name = "deleted_at")
-    private LocalDateTime deletedAt;
-
-    @Column(name = "deleted_by")
-    private UUID deletedBy;
 
     protected MeetingJoin() {
     }
@@ -128,12 +110,5 @@ public class MeetingJoin {
     public String getRejectReason() {
         return rejectReason;
     }
-
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public UUID getCreatedBy() {
-        return createdBy;
-    }
+    
 }
