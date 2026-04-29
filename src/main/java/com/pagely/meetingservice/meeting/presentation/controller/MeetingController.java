@@ -77,13 +77,9 @@ public class MeetingController {
                 .body(MeetingResponse.from(result));
     }
 
-    // 모임 전체 조회 - 페이징 처리
-    @AuthRequired
+    // 모임 전체 조회
     @GetMapping
-    public PageResponse<MeetingSummaryResponse> getMeetings(
-            @CurrentUserId UUID currentUserId,
-            PageRequest pageRequest
-    ) {
+    public PageResponse<MeetingSummaryResponse> getMeetings(PageRequest pageRequest) {
         Page<MeetingSummaryResult> results = meetingQueryService.getMeetings(
                 pageRequest.toPageable()
         );
@@ -92,12 +88,8 @@ public class MeetingController {
     }
 
     // 모임 상세 조회
-    @AuthRequired
     @GetMapping("/{meetingId}")
-    public MeetingResponse getMeeting(
-            @PathVariable UUID meetingId,
-            @CurrentUserId UUID currentUserId
-    ) {
+    public MeetingResponse getMeeting(@PathVariable UUID meetingId) {
         MeetingResult result = meetingQueryService.getMeeting(meetingId);
         return MeetingResponse.from(result);
     }
@@ -118,7 +110,7 @@ public class MeetingController {
                 .body(MeetingJoinResponse.from(result));
     }
 
-    // 가입 신청 목록 조회 - 페이징 처리
+    // 가입 신청 목록 조회
     @AuthRequired
     @GetMapping("/{meetingId}/join")
     public PageResponse<MeetingJoinResponse> getMeetingJoinList(
@@ -127,7 +119,6 @@ public class MeetingController {
             @RequestParam(required = false) MeetingJoinStatus joinStatus,
             PageRequest pageRequest
     ) {
-        // 최신 가입 신청이 먼저 보이도록 생성일 내림차순 정렬
         Page<MeetingJoinResult> results = meetingJoinService.getMeetingJoinList(
                 meetingId,
                 currentUserId,
@@ -177,7 +168,7 @@ public class MeetingController {
                 .body(MeetingScheduleResponse.from(result));
     }
 
-    // 모임 일정 목록 조회 - 페이징 처리
+    // 모임 일정 목록 조회
     @AuthRequired
     @GetMapping("/{meetingId}/schedules")
     public PageResponse<MeetingScheduleResponse> getMeetingSchedules(
@@ -243,7 +234,7 @@ public class MeetingController {
         return ResponseEntity.ok(MeetingScheduleResponse.from(result));
     }
 
-    // 특정 일정 출석부 조회 - 페이징 처리
+    // 특정 일정 출석부 조회
     @AuthRequired
     @GetMapping("/{meetingId}/schedules/{scheduleId}/attendances")
     public MeetingAttendancePageResponse getScheduleAttendances(
@@ -268,7 +259,7 @@ public class MeetingController {
         return MeetingAttendancePageResponse.from(results, statistics);
     }
 
-    // 내 출석부 조회 - 페이징 처리
+    // 내 출석부 조회
     @AuthRequired
     @GetMapping("/{meetingId}/attendances/me")
     public MeetingAttendancePageResponse getMyAttendances(
