@@ -1,5 +1,7 @@
 package com.pagely.meetingservice.meeting.presentation.controller;
 
+import com.pagely.common.auth.annotation.AuthRequired;
+import com.pagely.common.auth.annotation.CurrentUserId;
 import com.pagely.common.pagination.PageRequest;
 import com.pagely.common.pagination.PageResponse;
 import com.pagely.meetingservice.meeting.application.dto.command.CreateMeetingScheduleCommand;
@@ -61,12 +63,14 @@ public class MeetingController {
     private final MeetingAttendanceQueryService meetingAttendanceQueryService;
 
     // 모임 생성
+    @AuthRequired
     @PostMapping
     public ResponseEntity<MeetingResponse> createMeeting(
+            @CurrentUserId UUID currentUserId,
             @Valid @RequestBody CreateMeetingRequest req
     ) {
         MeetingResult result = meetingCommandService.createMeeting(
-                req.toCommand(req.hostId())
+                req.toCommand(currentUserId)
         );
 
         return ResponseEntity.status(HttpStatus.CREATED)
@@ -91,13 +95,15 @@ public class MeetingController {
     }
 
     // 모임 가입 신청
+    @AuthRequired
     @PostMapping("/{meetingId}/join")
     public ResponseEntity<MeetingJoinResponse> joinMeeting(
             @PathVariable UUID meetingId,
+            @CurrentUserId UUID currentUserId,
             @Valid @RequestBody JoinMeetingRequest req
     ) {
         MeetingJoinResult result = meetingJoinService.createMeetingJoin(
-                req.toCommand(meetingId, req.recruitUserId())
+                req.toCommand(meetingId, currentUserId)
         );
 
         return ResponseEntity.status(HttpStatus.CREATED)
@@ -105,17 +111,18 @@ public class MeetingController {
     }
 
     // 가입 신청 목록 조회 - 페이징 처리
+    @AuthRequired
     @GetMapping("/{meetingId}/join")
     public PageResponse<MeetingJoinResponse> getMeetingJoinList(
             @PathVariable UUID meetingId,
-            @RequestParam UUID hostId,
+            @CurrentUserId UUID currentUserId,
             @RequestParam(required = false) MeetingJoinStatus joinStatus,
             PageRequest pageRequest
     ) {
         // 최신 가입 신청이 먼저 보이도록 생성일 내림차순 정렬
         Page<MeetingJoinResult> results = meetingJoinService.getMeetingJoinList(
                 meetingId,
-                hostId,
+                currentUserId,
                 joinStatus,
                 pageRequest.toPageable(Sort.by(Sort.Direction.DESC, "createdAt"))
         );
@@ -124,16 +131,17 @@ public class MeetingController {
     }
 
     // 모임 가입 승인
+    @AuthRequired
     @PostMapping("/{meetingId}/join/{joinId}/approve")
     public MeetingJoinResponse approveMeetingJoin(
             @PathVariable UUID meetingId,
             @PathVariable UUID joinId,
-            @RequestParam UUID hostId // TODO: 인증 전 임시 모임장 식별
+            @CurrentUserId UUID currentUserId
     ) {
         MeetingJoinResult result = meetingJoinService.approveMeetingJoin(
                 meetingId,
                 joinId,
-                hostId
+                currentUserId
         );
 
         return MeetingJoinResponse.from(result);
