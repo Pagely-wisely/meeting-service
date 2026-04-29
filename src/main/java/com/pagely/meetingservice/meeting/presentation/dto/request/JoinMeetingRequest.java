@@ -1,7 +1,6 @@
 package com.pagely.meetingservice.meeting.presentation.dto.request;
 
 import com.pagely.meetingservice.meeting.application.dto.command.JoinMeetingCommand;
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import java.util.UUID;
 

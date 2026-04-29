@@ -51,7 +51,7 @@ public record CreateMeetingRequest(
     // 요청 DTO → 생성 커맨드 변환
     public CreateMeetingCommand toCommand(UUID currentUserId) {
         return new CreateMeetingCommand(
-            currentUserId,
+                currentUserId,
                 bookId,
                 title,
                 description,

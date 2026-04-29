@@ -66,7 +66,7 @@ public class MeetingController {
     @AuthRequired
     @PostMapping
     public ResponseEntity<MeetingResponse> createMeeting(
-        @CurrentUserId UUID currentUserId,
+            @CurrentUserId UUID currentUserId,
             @Valid @RequestBody CreateMeetingRequest req
     ) {
         MeetingResult result = meetingCommandService.createMeeting(
