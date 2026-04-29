@@ -48,30 +48,6 @@ public class MeetingAttendance extends BaseEntity {
     @Column(name = "note", length = 255)
     private String note;
 
-    // 생성일시
-    @Column(name = "created_at", nullable = false, updatable = false)
-    private LocalDateTime createdAt;
-
-    // 생성자 ID
-    @Column(name = "created_by", nullable = false, updatable = false)
-    private UUID createdBy;
-
-    // 수정일시
-    @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
-
-    // 수정자 ID
-    @Column(name = "updated_by")
-    private UUID updatedBy;
-
-    // 삭제일시
-    @Column(name = "deleted_at")
-    private LocalDateTime deletedAt;
-
-    // 삭제자 ID
-    @Column(name = "deleted_by")
-    private UUID deletedBy;
-
     protected MeetingAttendance() {
     }
 
@@ -191,11 +167,4 @@ public class MeetingAttendance extends BaseEntity {
         return note;
     }
 
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public UUID getCreatedBy() {
-        return createdBy;
-    }
 }

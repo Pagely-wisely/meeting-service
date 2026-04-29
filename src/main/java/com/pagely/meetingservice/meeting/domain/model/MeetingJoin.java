@@ -43,25 +43,6 @@ public class MeetingJoin extends BaseEntity {
     @Column(name = "reject_reason")
     private String rejectReason;
 
-    // 공통 감사 컬럼
-    @Column(name = "created_at", nullable = false, updatable = false)
-    private LocalDateTime createdAt;
-
-    @Column(name = "created_by", nullable = false, updatable = false)
-    private UUID createdBy;
-
-    @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
-
-    @Column(name = "updated_by")
-    private UUID updatedBy;
-
-    @Column(name = "deleted_at")
-    private LocalDateTime deletedAt;
-
-    @Column(name = "deleted_by")
-    private UUID deletedBy;
-
     protected MeetingJoin() {
     }
 
@@ -129,12 +110,5 @@ public class MeetingJoin extends BaseEntity {
     public String getRejectReason() {
         return rejectReason;
     }
-
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public UUID getCreatedBy() {
-        return createdBy;
-    }
+    
 }

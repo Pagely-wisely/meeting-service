@@ -31,7 +31,6 @@ public class MeetingJoinService {
 
     private final MeetingJoinRepository meetingJoinRepository;
     private final MeetingRepository meetingRepository;
-    private final MeetingJoinListSortPolicy meetingJoinListSortPolicy;
     private final MeetingMemberRepository meetingMemberRepository;
 
     private static final UUID RECRUIT_PERIOD = UUID.fromString("00000000-0000-0000-0000-000000000000");
@@ -39,11 +38,9 @@ public class MeetingJoinService {
     // 생성자
     public MeetingJoinService(MeetingJoinRepository meetingJoinRepository,
                               MeetingRepository meetingRepository,
-                              MeetingJoinListSortPolicy meetingJoinListSortPolicy,
                               MeetingMemberRepository meetingMemberRepository) {
         this.meetingJoinRepository = meetingJoinRepository;
         this.meetingRepository = meetingRepository;
-        this.meetingJoinListSortPolicy = meetingJoinListSortPolicy;
         this.meetingMemberRepository = meetingMemberRepository;
     }
 

@@ -105,7 +105,9 @@ public class Meeting extends BaseEntity{
             ReadingLevel readingLevel,
             String ruleMemo,
             RecruitRate recruitRate,
-            boolean freePaid
+            boolean freePaid,
+            LocalDateTime createdAt,
+            UUID createdBy
     ) {
         if (recruitMax <= 0) {
             throw new BusinessException(MeetingErrorCode.INVALID_RECRUIT_MAX);
@@ -130,6 +132,8 @@ public class Meeting extends BaseEntity{
         meeting.ruleMemo = ruleMemo;
         meeting.recruitRate = recruitRate;
         meeting.freePaid = freePaid;
+        meeting.createdAt = createdAt;
+        meeting.createdBy = createdBy;
         return meeting;
     }
 
@@ -138,7 +142,6 @@ public class Meeting extends BaseEntity{
         this.updatedBy = updatedBy;
         this.updatedAt = LocalDateTime.now();
     }
-
         // 모집 마감 시간이 지났으면 RECRUITING → CLOSED 로 전이
     public void applyRecruitClosedIfPeriodEnded(LocalDateTime now, UUID updatedBy) {
         if (this.recruitStatus != RecruitStatus.RECRUITING) {
@@ -208,14 +211,6 @@ public class Meeting extends BaseEntity{
 
     public boolean isFreePaid() {
         return freePaid;
-    }
-
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public UUID getCreatedBy() {
-        return createdBy;
     }
 
     public boolean canViewJoinApplications(UUID userId) {

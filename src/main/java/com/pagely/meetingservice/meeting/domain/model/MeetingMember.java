@@ -53,30 +53,6 @@ public class MeetingMember extends BaseEntity {
     @Column(name = "late_count", nullable = false)
     private int lateCount;
 
-    // 생성 시각
-    @Column(name = "created_at", nullable = false, updatable = false)
-    private LocalDateTime createdAt;
-
-    // 생성자 ID
-    @Column(name = "created_by", nullable = false, updatable = false)
-    private UUID createdBy;
-
-    // 수정 시각
-    @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
-
-    // 수정자 ID
-    @Column(name = "updated_by")
-    private UUID updatedBy;
-
-    // 삭제 시각
-    @Column(name = "deleted_at")
-    private LocalDateTime deletedAt;
-
-    // 삭제자 ID
-    @Column(name = "deleted_by")
-    private UUID deletedBy;
-
     protected MeetingMember() {
     }
 
@@ -185,14 +161,6 @@ public class MeetingMember extends BaseEntity {
 
     public int getWarningCount() {
         return warningCount;
-    }
-
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public UUID getCreatedBy() {
-        return createdBy;
     }
 
 }
