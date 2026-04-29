@@ -4,6 +4,9 @@ import com.pagely.common.exception.BusinessException;
 import com.pagely.meetingservice.meeting.application.dto.command.CreateMeetingScheduleCommand;
 import com.pagely.meetingservice.meeting.application.dto.command.UpdateScheduleStatusCommand;
 import com.pagely.meetingservice.meeting.application.dto.result.MeetingScheduleResult;
+import com.pagely.meetingservice.meeting.application.port.EventPublisher;
+import com.pagely.meetingservice.meeting.domain.event.MeetingScheduleCreatedEvent;
+import com.pagely.meetingservice.meeting.domain.event.MeetingScheduleStatusChangedEvent;
 import com.pagely.meetingservice.meeting.domain.exception.MeetingErrorCode;
 import com.pagely.meetingservice.meeting.domain.exception.MeetingMemberErrorCode;
 import com.pagely.meetingservice.meeting.domain.exception.MeetingScheduleErrorCode;
@@ -31,6 +34,7 @@ public class MeetingScheduleCommandService {
     private final MeetingScheduleRepository meetingScheduleRepository;
     private final MeetingMemberRepository meetingMemberRepository;
     private final MeetingAttendanceRepository meetingAttendanceRepository;
+    private final EventPublisher eventPublisher;
 
     // 모임 일정 생성
     @Transactional
@@ -66,9 +70,17 @@ public class MeetingScheduleCommandService {
                 command.requesterId()
         );
 
-        // 생성된 일정 저장 후 결과 DTO로 변환
+        // 생성된 일정 저장
         MeetingSchedule savedSchedule = meetingScheduleRepository.save(schedule);
 
+        // 일정 생성 이벤트 메시지 생성
+        // 저장된 일정 ID와 최종 상태를 payload에 담기 위해 저장 이후 이벤트를 생성한다.
+        MeetingScheduleCreatedEvent event = MeetingScheduleCreatedEvent.of(savedSchedule);
+
+        // 일정 생성 이벤트를 Kafka로 발행한다.
+        eventPublisher.publish(event);
+
+        // 저장된 일정 결과 DTO 반환
         return MeetingScheduleResult.from(savedSchedule);
     }
 
@@ -108,6 +120,13 @@ public class MeetingScheduleCommandService {
         } else {
             schedule.changeStatus(command.status(), command.updatedBy());
         }
+
+        // 일정 상태 변경 이벤트 메시지 생성
+        // 상태 변경이 끝난 뒤 생성해야 변경된 최종 상태가 payload에 담긴다.
+        MeetingScheduleStatusChangedEvent event = MeetingScheduleStatusChangedEvent.of(schedule);
+
+        // 일정 상태 변경 이벤트를 Kafka로 발행한다.
+        eventPublisher.publish(event);
 
         return MeetingScheduleResult.from(schedule);
     }
