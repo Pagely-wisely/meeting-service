@@ -17,8 +17,9 @@ import com.pagely.meetingservice.meeting.domain.repository.MeetingJoinRepository
 import com.pagely.meetingservice.meeting.domain.repository.MeetingMemberRepository;
 import com.pagely.meetingservice.meeting.domain.repository.MeetingRepository;
 import java.time.LocalDateTime;
-import java.util.List;
 import java.util.UUID;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -46,31 +47,32 @@ public class MeetingJoinService {
         this.meetingMemberRepository = meetingMemberRepository;
     }
 
-    // 모임 가입 신청 목록 조회
-    public List<MeetingJoinResult> getMeetingJoinList(UUID meetingId, UUID requesterHostId,
-                                                      MeetingJoinStatus joinStatus) {
-        Meeting meeting = meetingRepository.findById(meetingId) // 모임 조회    
+    // 모임 가입 신청 목록 조회 - 페이징 처리
+    public Page<MeetingJoinResult> getMeetingJoinList(
+            UUID meetingId,
+            UUID requesterHostId,
+            MeetingJoinStatus joinStatus,
+            Pageable pageable
+    ) {
+        // 모임 조회
+        Meeting meeting = meetingRepository.findById(meetingId)
                 .orElseThrow(() -> new BusinessException(MeetingErrorCode.MEETING_NOT_FOUND));
 
+        // 모집 기간이 종료된 경우 모집 상태를 CLOSED로 동기화
         syncRecruitClosedPeriod(meeting);
 
-        if (!meeting.getHostId().equals(requesterHostId)) { // 모임장 검증
+        // 모임장만 가입 신청 목록을 조회할 수 있음
+        if (!meeting.getHostId().equals(requesterHostId)) {
             throw new BusinessException(MeetingJoinErrorCode.ONLY_HOST_CAN_VIEW_JOIN_LIST);
-
-        }
-        List<MeetingJoin> joins;
-
-        if (joinStatus != null) {
-            joins = meetingJoinRepository.findByMeetingIdAndJoinStatus(meetingId, joinStatus);
-        } else {
-            joins = meetingJoinRepository.findByMeetingId(meetingId);
         }
 
-        meetingJoinListSortPolicy.sortForHostJoinList(joins);
+        // 가입 상태 조건이 있으면 상태별 조회, 없으면 전체 조회
+        Page<MeetingJoin> joins = joinStatus != null
+                ? meetingJoinRepository.findByMeetingIdAndJoinStatus(meetingId, joinStatus, pageable)
+                : meetingJoinRepository.findByMeetingId(meetingId, pageable);
 
-        return joins.stream().map(MeetingJoinResult::from).toList();
-
-
+        // 엔티티 Page를 결과 DTO Page로 변환
+        return joins.map(MeetingJoinResult::from);
     }
 
     // 가입 신청 처리
@@ -209,7 +211,7 @@ public class MeetingJoinService {
         RecruitStatus before = meeting.getRecruitStatus();
         LocalDateTime now = LocalDateTime.now();
         meeting.applyRecruitClosedIfPeriodEnded(now, RECRUIT_PERIOD);
-        if(before != meeting.getRecruitStatus()) {
+        if (before != meeting.getRecruitStatus()) {
             meetingRepository.save(meeting);
         }
     }

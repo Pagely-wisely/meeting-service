@@ -5,6 +5,8 @@ import com.pagely.meetingservice.meeting.domain.model.MeetingAttendance;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 // 모임 일정 참석 JPA Repository
@@ -13,7 +15,10 @@ public interface JpaMeetingAttendanceRepository extends JpaRepository<MeetingAtt
     // 일정 + 유저 기준 참석 조회
     Optional<MeetingAttendance> findByScheduleIdAndUserIdAndDeletedAtIsNull(UUID scheduleId, UUID userId);
 
-    // 특정 일정의 참석 목록 조회
+    // 특정 일정의 참석 목록 조회 - 페이징 처리
+    Page<MeetingAttendance> findAllByScheduleIdAndDeletedAtIsNull(UUID scheduleId, Pageable pageable);
+
+    // 특정 일정의 참석 목록 조회 - 통계 계산용 전체 조회
     List<MeetingAttendance> findAllByScheduleIdAndDeletedAtIsNull(UUID scheduleId);
 
     // 특정 일정의 상태별 참석 목록 조회
@@ -22,7 +27,14 @@ public interface JpaMeetingAttendanceRepository extends JpaRepository<MeetingAtt
             AttendanceStatus status
     );
 
-    // 특정 모임에서 특정 유저의 참석 목록 조회
+    // 특정 모임에서 특정 유저의 참석 목록 조회 - 페이징 처리
+    Page<MeetingAttendance> findAllByMeetingIdAndUserIdAndDeletedAtIsNull(
+            UUID meetingId,
+            UUID userId,
+            Pageable pageable
+    );
+
+    // 특정 모임에서 특정 유저의 참석 목록 조회 - 통계 계산용 전체 조회
     List<MeetingAttendance> findAllByMeetingIdAndUserIdAndDeletedAtIsNull(UUID meetingId, UUID userId);
 
     // 특정 일정에 이미 참석 등록했는지 확인

@@ -5,6 +5,8 @@ import com.pagely.meetingservice.meeting.domain.model.MeetingScheduleStatus;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 // 모임 일정 JPA Repository
@@ -13,8 +15,8 @@ public interface JpaMeetingScheduleRepository extends JpaRepository<MeetingSched
     // 특정 모임의 일정 목록 조회
     List<MeetingSchedule> findByMeetingId(UUID meetingId);
 
-    // 특정 모임의 삭제되지 않은 일정 목록 조회
-    List<MeetingSchedule> findByMeetingIdAndDeletedAtIsNullOrderByScheduleNumberAsc(UUID meetingId);
+    // 특정 모임의 삭제되지 않은 일정 목록 조회 - 페이징 처리
+    Page<MeetingSchedule> findByMeetingIdAndDeletedAtIsNull(UUID meetingId, Pageable pageable);
 
     // 특정 모임의 삭제되지 않은 일정 상세 조회
     Optional<MeetingSchedule> findByIdAndMeetingIdAndDeletedAtIsNull(UUID scheduleId, UUID meetingId);
