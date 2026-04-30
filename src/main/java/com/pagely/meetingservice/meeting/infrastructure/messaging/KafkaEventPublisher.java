@@ -3,10 +3,13 @@ package com.pagely.meetingservice.meeting.infrastructure.messaging;
 import com.pagely.meetingservice.meeting.application.port.EventPublisher;
 import com.pagely.meetingservice.meeting.domain.event.BaseEvent;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
-// Kafka를 이용해 이벤트를 발행하는 구현체
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class KafkaEventPublisher implements EventPublisher {
@@ -17,11 +20,44 @@ public class KafkaEventPublisher implements EventPublisher {
 
     @Override
     public void publish(BaseEvent event) {
-        // domainId를 메시지 키로 사용하여 같은 도메인 이벤트가 같은 파티션으로 갈 수 있도록 한다.
+        if (TransactionSynchronizationManager.isActualTransactionActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    send(event);
+                }
+            });
+            return;
+        }
+
+        send(event);
+    }
+
+    private void send(BaseEvent event) {
         kafkaTemplate.send(
                 MEETING_EVENT_TOPIC,
                 event.getDomainId(),
                 event
-        );
+        ).whenComplete((result, ex) -> {
+            if (ex != null) {
+                log.error(
+                        "Kafka publish failed. topic={}, domainId={}, eventType={}",
+                        MEETING_EVENT_TOPIC,
+                        event.getDomainId(),
+                        event.getEventType(),
+                        ex
+                );
+                return;
+            }
+
+            log.info(
+                    "Kafka publish success. topic={}, partition={}, offset={}, domainId={}, eventType={}",
+                    result.getRecordMetadata().topic(),
+                    result.getRecordMetadata().partition(),
+                    result.getRecordMetadata().offset(),
+                    event.getDomainId(),
+                    event.getEventType()
+            );
+        });
     }
 }

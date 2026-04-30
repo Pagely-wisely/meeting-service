@@ -1,6 +1,7 @@
 package com.pagely.meetingservice.meeting.domain.event;
 
 import java.time.Instant;
+import java.util.Objects;
 import java.util.UUID;
 import lombok.Getter;
 
@@ -15,19 +16,19 @@ public abstract class BaseEvent {
     private final Object payload;
 
     protected BaseEvent(String domainType, UUID domainId, Object payload) {
-        this(domainType, domainId == null ? null : domainId.toString(), payload);
-    }
-
-    protected BaseEvent(String domainType, Object payload) {
-        this(domainType, (String) null, payload);
+        this(
+                domainType,
+                Objects.requireNonNull(domainId, "domainId must not be null").toString(),
+                payload
+        );
     }
 
     protected BaseEvent(String domainType, String domainId, Object payload) {
         this.eventId = UUID.randomUUID().toString();
         this.eventType = this.getClass().getSimpleName();
-        this.domainType = domainType;
-        this.domainId = domainId;
+        this.domainType = Objects.requireNonNull(domainType, "domainType must not be null");
+        this.domainId = Objects.requireNonNull(domainId, "domainId must not be null");
         this.occurredAt = Instant.now();
-        this.payload = payload;
+        this.payload = Objects.requireNonNull(payload, "payload must not be null");
     }
 }
