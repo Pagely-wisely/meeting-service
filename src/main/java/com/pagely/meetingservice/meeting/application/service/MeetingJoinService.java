@@ -75,13 +75,14 @@ public class MeetingJoinService {
     // 가입 신청 처리
     @Transactional
     public MeetingJoinResult createMeetingJoin(JoinMeetingCommand command) {
-        Meeting meeting = meetingRepository.findById(command.meetingId())
+        Meeting meeting = meetingRepository.findByIdForUpdate(command.meetingId())
                 .orElseThrow(() -> new BusinessException(MeetingErrorCode.MEETING_NOT_FOUND));
 
         syncRecruitClosedPeriod(meeting);
 
         validateMeetingChangeableStatus(meeting);
         validateRecruitStatusForApply(meeting.getRecruitStatus());
+        validateCapacityForApply(command.meetingId(), meeting);
         validateJoinReapplyPolicy(command.meetingId(), command.recruitUserId());
         validateBlockedMemberStatus(command.meetingId(), command.recruitUserId());
 
@@ -97,10 +98,11 @@ public class MeetingJoinService {
     @Transactional
     public MeetingJoinResult approveMeetingJoin(UUID meetingId, UUID joinId, UUID hostId) {
 
-        Meeting meeting = meetingRepository.findById(meetingId)
+        Meeting meeting = meetingRepository.findByIdForUpdate(meetingId)
                 .orElseThrow(() -> new BusinessException(MeetingErrorCode.MEETING_NOT_FOUND));
 
         syncRecruitClosedPeriod(meeting);
+
         validateMeetingChangeableStatus(meeting);
 
         if (!meeting.getHostId().equals(hostId)) { // 모임장 검증
@@ -126,9 +128,11 @@ public class MeetingJoinService {
         }
 
         join.approve(hostId);
+
         MeetingJoin savedJoin = meetingJoinRepository.save(join);
 
         LocalDateTime now = LocalDateTime.now();
+
         MeetingMember member = MeetingMember.create(
                 UUID.randomUUID(),
                 meetingId,
@@ -140,8 +144,11 @@ public class MeetingJoinService {
         );
 
         meetingMemberRepository.save(member);
+
         syncRecruitStatusAfterApprove(meeting, hostId);
+
         meetingRepository.save(meeting);
+        
         return MeetingJoinResult.from(savedJoin);
 
     }
@@ -189,6 +196,14 @@ public class MeetingJoinService {
         if (existingMember.getStatus() == MeetingMemberStatus.REMOVED
                 || existingMember.getStatus() == MeetingMemberStatus.EXPELLED) {
             throw new BusinessException(MeetingJoinErrorCode.REJECTED_USER_CANNOT_REAPPLY);
+        }
+    }
+
+    private void validateCapacityForApply(UUID meetingId, Meeting meeting){
+        long activeCount = meetingMemberRepository.countByMeetingIdAndStatus(meetingId, MeetingMemberStatus.ACTIVE);
+
+        if(activeCount >= meeting.getRecruitMax()){
+            throw new BusinessException(MeetingJoinErrorCode.MEETING_RECRUIT_FULL);
         }
     }
 

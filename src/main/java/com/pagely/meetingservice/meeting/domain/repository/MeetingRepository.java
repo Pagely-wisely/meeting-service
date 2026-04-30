@@ -16,6 +16,9 @@ public interface MeetingRepository {
     // ID로 모임 조회
     Optional<Meeting> findById(UUID meetingId);
 
+    // 쓰기 락을 걸고 ID로 모임 조회
+    Optional<Meeting> findByIdForUpdate(UUID meetingId);
+
     // 전체 모임 조회 - 페이징
     Page<Meeting> findAll(Pageable pageable);
 

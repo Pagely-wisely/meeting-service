@@ -220,3 +220,6 @@ ALTER TABLE p_meeting_schedules
 
 ALTER TABLE p_meeting_attendance
     ADD CONSTRAINT uk_p_meeting_attendance_schedule_user UNIQUE (schedule_id, user_id);
+
+ALTER TABLE p_meeting_recruit
+    ADD CONSTRAINT uk_p_meeting_recruit_meeting_user UNIQUE (meeting_id, recruit_user_id);
