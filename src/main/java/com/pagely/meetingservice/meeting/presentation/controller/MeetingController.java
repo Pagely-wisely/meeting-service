@@ -77,7 +77,7 @@ public class MeetingController {
                 .body(MeetingResponse.from(result));
     }
 
-    // 모임 전체 조회 - 페이징 처리
+    // 모임 전체 조회
     @GetMapping
     public PageResponse<MeetingSummaryResponse> getMeetings(PageRequest pageRequest) {
         Page<MeetingSummaryResult> results = meetingQueryService.getMeetings(
@@ -110,7 +110,7 @@ public class MeetingController {
                 .body(MeetingJoinResponse.from(result));
     }
 
-    // 가입 신청 목록 조회 - 페이징 처리
+    // 가입 신청 목록 조회
     @AuthRequired
     @GetMapping("/{meetingId}/join")
     public PageResponse<MeetingJoinResponse> getMeetingJoinList(
@@ -119,7 +119,6 @@ public class MeetingController {
             @RequestParam(required = false) MeetingJoinStatus joinStatus,
             PageRequest pageRequest
     ) {
-        // 최신 가입 신청이 먼저 보이도록 생성일 내림차순 정렬
         Page<MeetingJoinResult> results = meetingJoinService.getMeetingJoinList(
                 meetingId,
                 currentUserId,
@@ -148,9 +147,11 @@ public class MeetingController {
     }
 
     // 모임 일정 생성
+    @AuthRequired
     @PostMapping("/{meetingId}/schedules")
     public ResponseEntity<MeetingScheduleResponse> createMeetingSchedule(
             @PathVariable UUID meetingId,
+            @CurrentUserId UUID currentUserId,
             @Valid @RequestBody CreateMeetingScheduleRequest req
     ) {
         CreateMeetingScheduleCommand command = new CreateMeetingScheduleCommand(
@@ -158,8 +159,7 @@ public class MeetingController {
                 req.bookId(),
                 req.startAt(),
                 req.discussionNote(),
-                // TODO: 인증 컨텍스트 연결 후 현재 로그인 사용자 ID로 변경
-                UUID.fromString("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa")
+                currentUserId
         );
 
         MeetingScheduleResult result = meetingScheduleCommandService.createSchedule(command);
@@ -168,13 +168,14 @@ public class MeetingController {
                 .body(MeetingScheduleResponse.from(result));
     }
 
-    // 모임 일정 목록 조회 - 페이징 처리
+    // 모임 일정 목록 조회
+    @AuthRequired
     @GetMapping("/{meetingId}/schedules")
     public PageResponse<MeetingScheduleResponse> getMeetingSchedules(
             @PathVariable UUID meetingId,
+            @CurrentUserId UUID currentUserId,
             PageRequest pageRequest
     ) {
-        // 회차 번호 오름차순 기준으로 페이징 조회
         Page<MeetingScheduleResult> results = meetingScheduleQueryService.getSchedules(
                 meetingId,
                 pageRequest.toPageable(Sort.by(Sort.Direction.ASC, "scheduleNumber"))
@@ -184,28 +185,29 @@ public class MeetingController {
     }
 
     // 모임 일정 상세 조회
+    @AuthRequired
     @GetMapping("/{meetingId}/schedules/{scheduleId}")
     public MeetingScheduleResponse getMeetingSchedule(
             @PathVariable UUID meetingId,
-            @PathVariable UUID scheduleId
+            @PathVariable UUID scheduleId,
+            @CurrentUserId UUID currentUserId
     ) {
         MeetingScheduleResult result = meetingScheduleQueryService.getSchedule(meetingId, scheduleId);
         return MeetingScheduleResponse.from(result);
     }
 
     // 모임 일정 참석 등록
+    @AuthRequired
     @PostMapping("/{meetingId}/schedules/{scheduleId}/join")
     public ResponseEntity<MeetingAttendanceResponse> joinMeetingSchedule(
             @PathVariable UUID meetingId,
-            @PathVariable UUID scheduleId
+            @PathVariable UUID scheduleId,
+            @CurrentUserId UUID currentUserId
     ) {
-        // TODO: 인증 컨텍스트 연결 후 현재 로그인 사용자 ID로 변경
-        UUID userId = UUID.fromString("cccccccc-cccc-cccc-cccc-cccccccccccc");
-
         MeetingAttendanceResult result = meetingAttendanceCommandService.joinSchedule(
                 meetingId,
                 scheduleId,
-                userId
+                currentUserId
         );
 
         return ResponseEntity.status(HttpStatus.CREATED)
@@ -213,19 +215,18 @@ public class MeetingController {
     }
 
     // 모임 일정 상태 변경
+    @AuthRequired
     @PatchMapping("/{meetingId}/schedules/{scheduleId}/status")
     public ResponseEntity<MeetingScheduleResponse> changeMeetingScheduleStatus(
             @PathVariable UUID meetingId,
             @PathVariable UUID scheduleId,
+            @CurrentUserId UUID currentUserId,
             @Valid @RequestBody UpdateScheduleStatusRequest req
     ) {
-        // TODO: 인증 컨텍스트 연결 후 현재 로그인 사용자 ID로 변경
-        UUID updatedBy = UUID.fromString("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
-
         UpdateScheduleStatusCommand command = req.toCommand(
                 meetingId,
                 scheduleId,
-                updatedBy
+                currentUserId
         );
 
         MeetingScheduleResult result = meetingScheduleCommandService.changeScheduleStatus(command);
@@ -233,73 +234,66 @@ public class MeetingController {
         return ResponseEntity.ok(MeetingScheduleResponse.from(result));
     }
 
-    // 특정 일정 출석부 조회 - 페이징 처리
+    // 특정 일정 출석부 조회
+    @AuthRequired
     @GetMapping("/{meetingId}/schedules/{scheduleId}/attendances")
     public MeetingAttendancePageResponse getScheduleAttendances(
             @PathVariable UUID meetingId,
             @PathVariable UUID scheduleId,
+            @CurrentUserId UUID currentUserId,
             PageRequest pageRequest
     ) {
-        // TODO: 인증 컨텍스트 연결 후 현재 로그인 사용자 ID로 변경 (테스트 ID: 모임장)
-        UUID userId = UUID.fromString("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
-
-        // 출석 목록은 페이징 처리
         Page<MeetingAttendanceResult> results = meetingAttendanceQueryService.getScheduleAttendances(
                 meetingId,
                 scheduleId,
-                userId,
+                currentUserId,
                 pageRequest.toPageable(Sort.by(Sort.Direction.ASC, "createdAt"))
         );
 
-        // 출석 통계는 전체 출석 기록 기준으로 계산
         AttendanceStatisticsResult statistics = meetingAttendanceQueryService.getScheduleAttendanceStatistics(
                 meetingId,
                 scheduleId,
-                userId
+                currentUserId
         );
 
         return MeetingAttendancePageResponse.from(results, statistics);
     }
 
-    // 내 출석부 조회 - 페이징 처리
+    // 내 출석부 조회
+    @AuthRequired
     @GetMapping("/{meetingId}/attendances/me")
     public MeetingAttendancePageResponse getMyAttendances(
             @PathVariable UUID meetingId,
+            @CurrentUserId UUID currentUserId,
             PageRequest pageRequest
     ) {
-        // TODO: 인증 컨텍스트 연결 후 현재 로그인 사용자 ID로 변경 (테스트 ID: 모임원)
-        UUID userId = UUID.fromString("cccccccc-cccc-cccc-cccc-cccccccccccc");
-
-        // 내 출석 이력은 페이징 처리
         Page<MeetingAttendanceResult> results = meetingAttendanceQueryService.getMyAttendances(
                 meetingId,
-                userId,
+                currentUserId,
                 pageRequest.toPageable(Sort.by(Sort.Direction.ASC, "createdAt"))
         );
 
-        // 내 출석 통계는 전체 출석 이력 기준으로 계산
         AttendanceStatisticsResult statistics = meetingAttendanceQueryService.getMyAttendanceStatistics(
                 meetingId,
-                userId
+                currentUserId
         );
 
         return MeetingAttendancePageResponse.from(results, statistics);
     }
 
     // 출석 상태 변경
+    @AuthRequired
     @PatchMapping("/{meetingId}/schedules/{scheduleId}/attendances")
     public ResponseEntity<MeetingAttendanceResponse> changeAttendanceStatus(
             @PathVariable UUID meetingId,
             @PathVariable UUID scheduleId,
+            @CurrentUserId UUID currentUserId,
             @Valid @RequestBody UpdateAttendanceStatusRequest req
     ) {
-        // TODO: 인증 컨텍스트 연결 후 현재 로그인 사용자 ID로 변경
-        UUID updatedBy = UUID.fromString("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
-
         UpdateAttendanceStatusCommand command = req.toCommand(
                 meetingId,
                 scheduleId,
-                updatedBy
+                currentUserId
         );
 
         MeetingAttendanceResult result = meetingAttendanceCommandService.changeAttendanceStatus(command);

@@ -3,6 +3,9 @@ package com.pagely.meetingservice.meeting.application.service;
 import com.pagely.common.exception.BusinessException;
 import com.pagely.meetingservice.meeting.application.dto.command.UpdateAttendanceStatusCommand;
 import com.pagely.meetingservice.meeting.application.dto.result.MeetingAttendanceResult;
+import com.pagely.meetingservice.meeting.application.port.EventPublisher;
+import com.pagely.meetingservice.meeting.domain.event.MeetingAttendanceJoinedEvent;
+import com.pagely.meetingservice.meeting.domain.event.MeetingAttendanceStatusChangedEvent;
 import com.pagely.meetingservice.meeting.domain.exception.MeetingAttendanceErrorCode;
 import com.pagely.meetingservice.meeting.domain.exception.MeetingErrorCode;
 import com.pagely.meetingservice.meeting.domain.exception.MeetingMemberErrorCode;
@@ -31,6 +34,7 @@ public class MeetingAttendanceCommandService {
     private final MeetingScheduleRepository meetingScheduleRepository;
     private final MeetingMemberRepository meetingMemberRepository;
     private final MeetingAttendanceRepository meetingAttendanceRepository;
+    private final EventPublisher eventPublisher;
 
     // 모임 일정 참석 등록
     @Transactional
@@ -77,9 +81,17 @@ public class MeetingAttendanceCommandService {
                 userId
         );
 
-        // 생성된 참석 정보를 저장 후 결과 DTO로 변환
+        // 생성된 참석 정보 저장
         MeetingAttendance saved = meetingAttendanceRepository.save(attendance);
 
+        // 출석 등록 이벤트 메시지 생성
+        // 저장된 출석 ID를 기준으로 ATTENDANCE 도메인 이벤트를 구성한다.
+        MeetingAttendanceJoinedEvent event = MeetingAttendanceJoinedEvent.of(saved);
+
+        // 출석 등록 이벤트를 Kafka로 발행한다.
+        eventPublisher.publish(event);
+
+        // 저장된 출석 결과 DTO 반환
         return MeetingAttendanceResult.from(saved);
     }
 
@@ -152,6 +164,13 @@ public class MeetingAttendanceCommandService {
                 command.note(),
                 command.updatedBy()
         );
+
+        // 출석 상태 변경 이벤트 메시지 생성
+        // 상태 변경 이후 생성해야 변경된 상태, 체크 시각, 비고가 payload에 담긴다.
+        MeetingAttendanceStatusChangedEvent event = MeetingAttendanceStatusChangedEvent.of(attendance);
+
+        // 출석 상태 변경 이벤트를 Kafka로 발행한다.
+        eventPublisher.publish(event);
 
         // 출석 상태 변경 결과에 따라 모임원의 패널티 카운트를 누적한다.
         // - LATE: 지각 수 +1, 경고 수 +1, 지각 3회마다 결석 수 +1
