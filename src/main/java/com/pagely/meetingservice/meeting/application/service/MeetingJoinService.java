@@ -75,13 +75,14 @@ public class MeetingJoinService {
     // 가입 신청 처리
     @Transactional
     public MeetingJoinResult createMeetingJoin(JoinMeetingCommand command) {
-        Meeting meeting = meetingRepository.findById(command.meetingId())
+        Meeting meeting = meetingRepository.findByIdForUpdate(command.meetingId())
                 .orElseThrow(() -> new BusinessException(MeetingErrorCode.MEETING_NOT_FOUND));
 
         syncRecruitClosedPeriod(meeting);
 
         validateMeetingChangeableStatus(meeting);
         validateRecruitStatusForApply(meeting.getRecruitStatus());
+        validateCapacityForApply(command.meetingId(), meeting);
         validateJoinReapplyPolicy(command.meetingId(), command.recruitUserId());
         validateBlockedMemberStatus(command.meetingId(), command.recruitUserId());
 
@@ -195,6 +196,14 @@ public class MeetingJoinService {
         if (existingMember.getStatus() == MeetingMemberStatus.REMOVED
                 || existingMember.getStatus() == MeetingMemberStatus.EXPELLED) {
             throw new BusinessException(MeetingJoinErrorCode.REJECTED_USER_CANNOT_REAPPLY);
+        }
+    }
+
+    private void validateCapacityForApply(UUID meetingId, Meeting meeting){
+        long activeCount = meetingMemberRepository.countByMeetingIdAndStatus(meetingId, MeetingMemberStatus.ACTIVE);
+
+        if(activeCount >= meeting.getRecruitMax()){
+            throw new BusinessException(MeetingJoinErrorCode.MEETING_RECRUIT_FULL);
         }
     }
 
