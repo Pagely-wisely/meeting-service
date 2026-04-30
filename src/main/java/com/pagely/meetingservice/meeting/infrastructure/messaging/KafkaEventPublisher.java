@@ -14,7 +14,11 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 @RequiredArgsConstructor
 public class KafkaEventPublisher implements EventPublisher {
 
-    private static final String MEETING_EVENT_TOPIC = "meeting-event";
+    private static final String MEETING_CREATED_TOPIC = "meeting.created";
+    private static final String MEETING_SCHEDULE_CREATED_TOPIC = "meeting.schedule.created";
+    private static final String MEETING_SCHEDULE_STATUS_CHANGED_TOPIC = "meeting.schedule.status-changed";
+    private static final String MEETING_ATTENDANCE_JOINED_TOPIC = "meeting.attendance.joined";
+    private static final String MEETING_ATTENDANCE_STATUS_CHANGED_TOPIC = "meeting.attendance.status-changed";
 
     private final KafkaTemplate<String, Object> kafkaTemplate;
 
@@ -34,15 +38,17 @@ public class KafkaEventPublisher implements EventPublisher {
     }
 
     private void send(BaseEvent event) {
+        String topic = resolveTopic(event);
+
         kafkaTemplate.send(
-                MEETING_EVENT_TOPIC,
+                topic,
                 event.getDomainId(),
                 event
         ).whenComplete((result, ex) -> {
             if (ex != null) {
                 log.error(
                         "Kafka publish failed. topic={}, domainId={}, eventType={}",
-                        MEETING_EVENT_TOPIC,
+                        topic,
                         event.getDomainId(),
                         event.getEventType(),
                         ex
@@ -59,5 +65,16 @@ public class KafkaEventPublisher implements EventPublisher {
                     event.getEventType()
             );
         });
+    }
+
+    private String resolveTopic(BaseEvent event) {
+        return switch (event.getEventType()) {
+            case "MeetingCreatedEvent" -> MEETING_CREATED_TOPIC;
+            case "MeetingScheduleCreatedEvent" -> MEETING_SCHEDULE_CREATED_TOPIC;
+            case "MeetingScheduleStatusChangedEvent" -> MEETING_SCHEDULE_STATUS_CHANGED_TOPIC;
+            case "MeetingAttendanceJoinedEvent" -> MEETING_ATTENDANCE_JOINED_TOPIC;
+            case "MeetingAttendanceStatusChangedEvent" -> MEETING_ATTENDANCE_STATUS_CHANGED_TOPIC;
+            default -> throw new IllegalArgumentException("Unsupported event type: " + event.getEventType());
+        };
     }
 }
