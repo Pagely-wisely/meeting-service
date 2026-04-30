@@ -37,10 +37,11 @@ public class MeetingScheduleCommandService {
     private final EventPublisher eventPublisher;
 
     // 모임 일정 생성
+    @SuppressWarnings("unused")
     @Transactional
     public MeetingScheduleResult createSchedule(CreateMeetingScheduleCommand command) {
         // 일정을 생성할 모임이 실제 존재하는지 확인
-        Meeting meeting = meetingRepository.findById(command.meetingId())
+        Meeting meeting = meetingRepository.findByIdForUpdate(command.meetingId())
                 .orElseThrow(() -> new BusinessException(MeetingErrorCode.MEETING_NOT_FOUND));
 
         // 요청자가 해당 모임의 멤버인지 확인
