@@ -29,6 +29,12 @@ public class MeetingRepositoryAdapter implements MeetingRepository {
         return jpaMeetingRepository.findByIdAndDeletedAtIsNull(meetingId);
     }
 
+    // 동시성 제어를 포함한 모임 단건 조회
+    @Override
+    public Optional<Meeting> findByIdForUpdate(UUID meetingId){
+        return jpaMeetingRepository.findByIdForUpdate(meetingId);
+    }
+
     // 삭제되지 않은 전체 모임 조회
     @Override
     public Page<Meeting> findAll(Pageable pageable) {
