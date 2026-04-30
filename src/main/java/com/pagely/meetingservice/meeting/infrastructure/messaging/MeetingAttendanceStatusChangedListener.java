@@ -1,5 +1,6 @@
 package com.pagely.meetingservice.meeting.infrastructure.messaging;
 
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
 
@@ -17,6 +18,7 @@ public class MeetingAttendanceStatusChangedListener {
 
     private static final String TOPIC = "meeting.attendance.status-changed";
 
+    @Qualifier("kafkaConsumerObjectMapper")
     private final ObjectMapper objectMapper;
     private final WarningThresholdService warningThresholdService;
 
