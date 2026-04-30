@@ -33,4 +33,11 @@ public interface MeetingMemberRepository {
 
     // 특정 유저가 해당 모임 멤버인지 확인
     boolean existsByMeetingIdAndUserId(UUID meetingId, UUID userId);
+
+    // 특정 유저가 속한 모임의 id 목록 조회
+    List<UUID> findMeetingIdsByUserIdAndStatuses(
+            UUID userId,
+            List<MeetingMemberStatus> statuses
+    );
+
 }

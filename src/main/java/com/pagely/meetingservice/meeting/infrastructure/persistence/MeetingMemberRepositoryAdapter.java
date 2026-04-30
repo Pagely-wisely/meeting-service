@@ -86,4 +86,13 @@ public class MeetingMemberRepositoryAdapter implements MeetingMemberRepository {
                 MeetingMemberStatus.ACTIVE
         );
     }
+
+    // 특정 유저가 속한 모임의 id 목록 조회
+    @Override
+    public List<UUID> findMeetingIdsByUserIdAndStatuses(UUID userId, List<MeetingMemberStatus> statuses) {
+        return jpaMeetingMemberRepository.findDistinctMeetingIdsByUserIdAndStatusesAndDeletedAtIsNull(
+                userId,
+                statuses
+        );
+    }
 }
