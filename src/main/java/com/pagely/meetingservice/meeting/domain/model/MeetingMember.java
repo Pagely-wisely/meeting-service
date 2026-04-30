@@ -131,6 +131,19 @@ public class MeetingMember extends BaseEntity {
         this.updatedAt = LocalDateTime.now();
     }
 
+    // 시스템 정책에 의한 자동 강퇴 처리
+    public void expelBySystem(UUID updatedBy){
+        if(this.status == MeetingMemberStatus.EXPELLED){ // 이미 강퇴된 경우 강퇴 불가
+            return;
+        }
+        if(this.role == MeetingMemberRole.HOST){ // 모임장인 경우 강퇴 불가
+            return;
+        }
+        this.status = MeetingMemberStatus.EXPELLED; 
+        this.updatedBy = updatedBy;
+        this.updatedAt = LocalDateTime.now();
+    }
+
     public int getLateCount() {
         return lateCount;
     }
