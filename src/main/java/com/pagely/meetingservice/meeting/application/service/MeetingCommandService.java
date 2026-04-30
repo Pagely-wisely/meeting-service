@@ -2,6 +2,8 @@ package com.pagely.meetingservice.meeting.application.service;
 
 import com.pagely.meetingservice.meeting.application.dto.command.CreateMeetingCommand;
 import com.pagely.meetingservice.meeting.application.dto.result.MeetingResult;
+import com.pagely.meetingservice.meeting.application.port.EventPublisher;
+import com.pagely.meetingservice.meeting.domain.event.MeetingCreatedEvent;
 import com.pagely.meetingservice.meeting.domain.model.Meeting;
 import com.pagely.meetingservice.meeting.domain.model.MeetingMember;
 import com.pagely.meetingservice.meeting.domain.model.MeetingMemberRole;
@@ -22,6 +24,7 @@ public class MeetingCommandService {
 
     private final MeetingRepository meetingRepository;
     private final MeetingMemberRepository meetingMemberRepository;
+    private final EventPublisher eventPublisher;
 
     // 모임 생성
     @Transactional
@@ -48,6 +51,9 @@ public class MeetingCommandService {
 
         // 모임장 멤버 저장
         meetingMemberRepository.save(hostMember);
+
+        // 모임 생성 이벤트 발행
+        eventPublisher.publish(MeetingCreatedEvent.of(saved));
 
         return MeetingResult.from(saved);
     }
