@@ -6,10 +6,13 @@ import com.pagely.common.exception.BusinessException;
 import com.pagely.meetingservice.meeting.domain.exception.MeetingMemberErrorCode;
 import com.pagely.meetingservice.meeting.domain.model.AttendanceStatus;
 import com.pagely.meetingservice.meeting.domain.model.MeetingMember;
+import com.pagely.meetingservice.meeting.domain.model.ProcessedEvent;
 import com.pagely.meetingservice.meeting.domain.repository.MeetingMemberRepository;
+import com.pagely.meetingservice.meeting.infrastructure.persistence.JpaProcessedEventRepository;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,7 +23,10 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class MeetingAttendanceEventConsumer {
 
+    private static final String CONSUMER_NAME = "meeting-attendance-event-consumer";
+
     private final MeetingMemberRepository meetingMemberRepository;
+    private final JpaProcessedEventRepository processedEventRepository;
     private final ObjectMapper objectMapper;
 
     // 출석 상태 변경 이벤트 수신
@@ -31,26 +37,46 @@ public class MeetingAttendanceEventConsumer {
             groupId = "meeting-service"
     )
     public void consumeAttendanceStatusChanged(String message) {
+        String eventId = null;
+        UUID attendanceId = null;
+
         try {
             // Kafka로 수신한 전체 이벤트 JSON 파싱
             JsonNode root = objectMapper.readTree(message);
 
-            // BaseEvent 내부의 payload 필드 추출
+            // 멱등성 기준은 BaseEvent의 eventId를 사용한다.
+            eventId = root.get("eventId").asText();
+
+            // BaseEvent 내부 payload 필드 추출
             JsonNode payload = root.get("payload");
 
-            UUID attendanceId = UUID.fromString(payload.get("attendanceId").asText());
+            attendanceId = UUID.fromString(payload.get("attendanceId").asText());
             UUID meetingId = UUID.fromString(payload.get("meetingId").asText());
             UUID userId = UUID.fromString(payload.get("userId").asText());
             UUID changedBy = UUID.fromString(payload.get("changedBy").asText());
             AttendanceStatus status = AttendanceStatus.valueOf(payload.get("status").asText());
 
             log.info(
-                    "출석 상태 변경 이벤트 수신: attendanceId={}, meetingId={}, userId={}, status={}",
+                    "출석 상태 변경 이벤트 수신: eventId={}, attendanceId={}, meetingId={}, userId={}, status={}",
+                    eventId,
                     attendanceId,
                     meetingId,
                     userId,
                     status
             );
+
+            // 이벤트 처리 전 processed_event를 먼저 저장한다.
+            // 저장 성공한 Consumer만 이후 패널티 누적을 수행한다.
+            boolean acquired = trySaveProcessedEvent(eventId, attendanceId);
+            if (!acquired) {
+                log.info(
+                        "이미 처리 중이거나 처리 완료된 출석 이벤트 skip: consumerName={}, eventId={}, attendanceId={}",
+                        CONSUMER_NAME,
+                        eventId,
+                        attendanceId
+                );
+                return;
+            }
 
             // 이벤트 payload의 meetingId, userId 기준으로 모임원을 조회한다.
             MeetingMember member = meetingMemberRepository.findByMeetingIdAndUserId(
@@ -62,7 +88,9 @@ public class MeetingAttendanceEventConsumer {
             // 비활성 모임원은 패널티 누적 대상에서 제외한다.
             if (!member.isActive()) {
                 log.warn(
-                        "비활성 모임원 출석 패널티 누적 제외: meetingId={}, userId={}, memberStatus={}",
+                        "비활성 모임원 출석 패널티 누적 제외: eventId={}, attendanceId={}, meetingId={}, userId={}, memberStatus={}",
+                        eventId,
+                        attendanceId,
                         meetingId,
                         userId,
                         member.getStatus()
@@ -71,48 +99,75 @@ public class MeetingAttendanceEventConsumer {
             }
 
             // 패널티 적용 전 현재 카운트 확인
-// 지각 1회에 warningCount가 증가하는지,
-// 아니면 적용 전부터 warningCount가 이미 1이었는지 확인하기 위한 로그
             log.info(
-                    "출석 패널티 적용 전: meetingId={}, userId={}, status={}, lateCount={}, absentCount={}, warningCount={}",
-                    meetingId,
-                    userId,
-                    status,
+                    "출석 패널티 적용 전: eventId={}, attendanceId={}, lateCount={}, absentCount={}, warningCount={}",
+                    eventId,
+                    attendanceId,
                     member.getLateCount(),
                     member.getAbsentCount(),
                     member.getWarningCount()
             );
 
-// 출석 상태에 따라 지각/결석/경고 카운트를 누적한다.
-// 실제 누적 규칙은 MeetingMember 도메인 메서드에 위임한다.
+            // 출석 상태에 따라 지각/결석/경고 카운트를 누적한다.
+            // 실제 누적 규칙은 MeetingMember 도메인 메서드에 위임한다.
             member.applyAttendancePenalty(status, changedBy);
 
-// 패널티 적용 후 카운트 확인
+            // 패널티 적용 후 카운트 확인
             log.info(
-                    "출석 패널티 적용 후: meetingId={}, userId={}, status={}, lateCount={}, absentCount={}, warningCount={}",
-                    meetingId,
-                    userId,
-                    status,
+                    "출석 패널티 적용 후: eventId={}, attendanceId={}, lateCount={}, absentCount={}, warningCount={}, memberStatus={}",
+                    eventId,
+                    attendanceId,
                     member.getLateCount(),
                     member.getAbsentCount(),
-                    member.getWarningCount()
+                    member.getWarningCount(),
+                    member.getStatus()
             );
 
-            log.info(
-                    "출석 패널티 누적 완료: meetingId={}, userId={}, status={}, lateCount={}, absentCount={}, warningCount={}",
-                    meetingId,
-                    userId,
-                    status,
-                    member.getLateCount(),
-                    member.getAbsentCount(),
-                    member.getWarningCount()
+        } catch (BusinessException | IllegalArgumentException e) {
+            // payload 오류, UUID 오류, enum 오류, 모임원 없음 등은 재시도해도 성공하지 않는 비재시도성 오류
+            // 원본 message에는 note 등 사용자 입력값이 포함될 수 있으므로 로그에 남기지 않는다.
+            log.warn(
+                    "출석 이벤트 비재시도성 실패: eventId={}, attendanceId={}, reason={}",
+                    eventId,
+                    attendanceId,
+                    e.getMessage(),
+                    e
             );
 
         } catch (Exception e) {
-            // 이벤트 처리 중 예외가 발생하면 로그를 남기고 예외를 다시 던진다.
-            // 그래야 Kafka listener가 실패 이벤트로 인식할 수 있다.
-            log.error("출석 상태 변경 이벤트 처리 실패: message={}", message, e);
+            // DB 일시 장애 등 예측 불가 오류는 재시도 대상
+            // 원본 message 전체는 개인정보/메모 노출 위험이 있으므로 로그에 남기지 않는다.
+            log.error(
+                    "출석 상태 변경 이벤트 처리 실패: eventId={}, attendanceId={}",
+                    eventId,
+                    attendanceId,
+                    e
+            );
             throw new IllegalStateException("출석 상태 변경 이벤트 처리 실패", e);
+        }
+    }
+
+    // 이벤트 처리 선점 저장
+    // consumer_name + event_id 유니크 제약을 이용해 중복 이벤트 처리를 방지한다.
+    private boolean trySaveProcessedEvent(String eventId, UUID attendanceId) {
+        try {
+            processedEventRepository.saveAndFlush(
+                    ProcessedEvent.of(CONSUMER_NAME, eventId)
+            );
+
+            log.info(
+                    "출석 이벤트 처리 선점 성공: consumerName={}, eventId={}, attendanceId={}",
+                    CONSUMER_NAME,
+                    eventId,
+                    attendanceId
+            );
+
+            return true;
+
+        } catch (DataIntegrityViolationException e) {
+            // 동일 consumerName + eventId가 이미 저장된 경우
+            // 같은 이벤트가 이미 처리 중이거나 처리 완료된 것으로 보고 skip한다.
+            return false;
         }
     }
 }
