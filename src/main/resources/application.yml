@@ -46,3 +46,6 @@ eureka:
     enabled: false
     register-with-eureka: false
     fetch-registry: false
+
+book-service:
+  url: http://localhost:19051

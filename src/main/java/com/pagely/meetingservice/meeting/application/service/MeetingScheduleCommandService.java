@@ -4,13 +4,13 @@ import com.pagely.common.exception.BusinessException;
 import com.pagely.meetingservice.meeting.application.dto.command.CreateMeetingScheduleCommand;
 import com.pagely.meetingservice.meeting.application.dto.command.UpdateScheduleStatusCommand;
 import com.pagely.meetingservice.meeting.application.dto.result.MeetingScheduleResult;
+import com.pagely.meetingservice.meeting.application.port.BookProvider;
 import com.pagely.meetingservice.meeting.application.port.EventPublisher;
 import com.pagely.meetingservice.meeting.domain.event.MeetingScheduleCreatedEvent;
 import com.pagely.meetingservice.meeting.domain.event.MeetingScheduleStatusChangedEvent;
 import com.pagely.meetingservice.meeting.domain.exception.MeetingErrorCode;
 import com.pagely.meetingservice.meeting.domain.exception.MeetingMemberErrorCode;
 import com.pagely.meetingservice.meeting.domain.exception.MeetingScheduleErrorCode;
-import com.pagely.meetingservice.meeting.domain.model.Meeting;
 import com.pagely.meetingservice.meeting.domain.model.MeetingAttendance;
 import com.pagely.meetingservice.meeting.domain.model.MeetingMember;
 import com.pagely.meetingservice.meeting.domain.model.MeetingSchedule;
@@ -35,13 +35,14 @@ public class MeetingScheduleCommandService {
     private final MeetingMemberRepository meetingMemberRepository;
     private final MeetingAttendanceRepository meetingAttendanceRepository;
     private final EventPublisher eventPublisher;
+    private final BookProvider bookProvider;
 
     // 모임 일정 생성
     @SuppressWarnings("unused")
     @Transactional
     public MeetingScheduleResult createSchedule(CreateMeetingScheduleCommand command) {
         // 일정을 생성할 모임이 실제 존재하는지 확인
-        Meeting meeting = meetingRepository.findByIdForUpdate(command.meetingId())
+        meetingRepository.findByIdForUpdate(command.meetingId())
                 .orElseThrow(() -> new BusinessException(MeetingErrorCode.MEETING_NOT_FOUND));
 
         // 요청자가 해당 모임의 멤버인지 확인
@@ -55,6 +56,11 @@ public class MeetingScheduleCommandService {
         if (!requester.isActive() || !requester.isHost()) {
             throw new BusinessException(MeetingScheduleErrorCode.ONLY_HOST_CAN_CREATE_SCHEDULE);
         }
+
+        // 정기 모임 일정 생성 전에 bookId 유효성을 Book Service 내부 API로 검증한다.
+        // Book Service에 책이 없으면 Book Service가 외부 API를 통해 생성 후 반환한다.
+        // bookId가 비어 있는 경우에는 BookProvider 내부에서 검증을 건너뛴다.
+        bookProvider.validateBook(command.bookId());
 
         // 기존 일정 중 가장 큰 회차 번호를 기준으로 다음 회차 번호 계산
         int nextScheduleNumber = calculateNextScheduleNumber(command.meetingId());

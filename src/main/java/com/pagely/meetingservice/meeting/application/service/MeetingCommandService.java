@@ -2,6 +2,7 @@ package com.pagely.meetingservice.meeting.application.service;
 
 import com.pagely.meetingservice.meeting.application.dto.command.CreateMeetingCommand;
 import com.pagely.meetingservice.meeting.application.dto.result.MeetingResult;
+import com.pagely.meetingservice.meeting.application.port.BookProvider;
 import com.pagely.meetingservice.meeting.application.port.EventPublisher;
 import com.pagely.meetingservice.meeting.domain.event.MeetingCreatedEvent;
 import com.pagely.meetingservice.meeting.domain.model.Meeting;
@@ -25,12 +26,18 @@ public class MeetingCommandService {
     private final MeetingRepository meetingRepository;
     private final MeetingMemberRepository meetingMemberRepository;
     private final EventPublisher eventPublisher;
+    private final BookProvider bookProvider;
 
     // 모임 생성
     @Transactional
     public MeetingResult createMeeting(CreateMeetingCommand command) {
         UUID meetingId = UUID.randomUUID();
         LocalDateTime now = LocalDateTime.now();
+
+        // 모임 생성 전에 bookId 유효성을 Book Service 내부 API로 검증한다.
+        // Book Service에 책이 없으면 Book Service가 외부 API를 통해 생성 후 반환한다.
+        // bookId가 비어 있는 경우에는 BookProvider 내부에서 검증을 건너뛴다.
+        bookProvider.validateBook(command.bookId());
 
         // 모임 엔티티 생성
         Meeting meeting = command.toMeeting(meetingId, now);
