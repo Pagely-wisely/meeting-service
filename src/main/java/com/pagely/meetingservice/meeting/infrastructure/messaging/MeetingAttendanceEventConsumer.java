@@ -70,9 +70,33 @@ public class MeetingAttendanceEventConsumer {
                 return;
             }
 
-            // 출석 상태에 따라 지각/결석/경고 카운트를 누적한다.
-            // 실제 누적 규칙은 MeetingMember 도메인 메서드에 위임한다.
+            // 패널티 적용 전 현재 카운트 확인
+// 지각 1회에 warningCount가 증가하는지,
+// 아니면 적용 전부터 warningCount가 이미 1이었는지 확인하기 위한 로그
+            log.info(
+                    "출석 패널티 적용 전: meetingId={}, userId={}, status={}, lateCount={}, absentCount={}, warningCount={}",
+                    meetingId,
+                    userId,
+                    status,
+                    member.getLateCount(),
+                    member.getAbsentCount(),
+                    member.getWarningCount()
+            );
+
+// 출석 상태에 따라 지각/결석/경고 카운트를 누적한다.
+// 실제 누적 규칙은 MeetingMember 도메인 메서드에 위임한다.
             member.applyAttendancePenalty(status, changedBy);
+
+// 패널티 적용 후 카운트 확인
+            log.info(
+                    "출석 패널티 적용 후: meetingId={}, userId={}, status={}, lateCount={}, absentCount={}, warningCount={}",
+                    meetingId,
+                    userId,
+                    status,
+                    member.getLateCount(),
+                    member.getAbsentCount(),
+                    member.getWarningCount()
+            );
 
             log.info(
                     "출석 패널티 누적 완료: meetingId={}, userId={}, status={}, lateCount={}, absentCount={}, warningCount={}",

@@ -18,6 +18,7 @@ public enum MeetingMemberErrorCode implements ErrorCode {
     INACTIVE_MEMBER(HttpStatus.BAD_REQUEST, "INACTIVE_MEMBER", "활성 상태의 모임원만 수행할 수 있습니다."), // 비활성 모임원
     REMOVED_OR_EXPELLED_MEMBER(HttpStatus.BAD_REQUEST, "REMOVED_OR_EXPELLED_MEMBER",
             "강퇴 또는 제거된 사용자는 가입 신청할 수 없습니다."), // 제거/강퇴 유저 제한
+    INVALID_ATTENDANCE_STATUS(HttpStatus.BAD_REQUEST, "INVALID_ATTENDANCE_STATUS", "유효하지 않은 출석 상태입니다."),
 
     /*
      * =========================================================
