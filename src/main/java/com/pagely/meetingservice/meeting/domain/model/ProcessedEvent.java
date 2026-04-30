@@ -33,8 +33,24 @@ public class ProcessedEvent {
         this.processedAt = processedAt;
     }
 
-    private static ProcessedEvent of(String consumerName, String eventId) {
+    public static ProcessedEvent of(String consumerName, String eventId) {
         return new ProcessedEvent(UUID.randomUUID(), consumerName, eventId, LocalDateTime.now());
+    }
+
+    public UUID getId(){
+        return id;
+    }
+
+    public String getConsumerName(){
+        return consumerName;
+    }
+
+    public String getEventId(){
+        return eventId;
+    }
+
+    public LocalDateTime getProcessedAt(){
+        return processedAt;
     }
     
 }
