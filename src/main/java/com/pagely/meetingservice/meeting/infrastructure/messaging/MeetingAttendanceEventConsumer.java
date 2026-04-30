@@ -45,16 +45,19 @@ public class MeetingAttendanceEventConsumer {
             JsonNode root = objectMapper.readTree(message);
 
             // 멱등성 기준은 BaseEvent의 eventId를 사용한다.
-            eventId = root.get("eventId").asText();
+            eventId = requiredText(root, "eventId");
 
             // BaseEvent 내부 payload 필드 추출
             JsonNode payload = root.get("payload");
+            if (payload == null || payload.isNull()) {
+                throw new IllegalArgumentException("Missing required field: payload");
+            }
 
-            attendanceId = UUID.fromString(payload.get("attendanceId").asText());
-            UUID meetingId = UUID.fromString(payload.get("meetingId").asText());
-            UUID userId = UUID.fromString(payload.get("userId").asText());
-            UUID changedBy = UUID.fromString(payload.get("changedBy").asText());
-            AttendanceStatus status = AttendanceStatus.valueOf(payload.get("status").asText());
+            attendanceId = UUID.fromString(requiredText(payload, "attendanceId"));
+            UUID meetingId = UUID.fromString(requiredText(payload, "meetingId"));
+            UUID userId = UUID.fromString(requiredText(payload, "userId"));
+            UUID changedBy = UUID.fromString(requiredText(payload, "changedBy"));
+            AttendanceStatus status = AttendanceStatus.valueOf(requiredText(payload, "status"));
 
             log.info(
                     "출석 상태 변경 이벤트 수신: eventId={}, attendanceId={}, meetingId={}, userId={}, status={}",
@@ -124,7 +127,7 @@ public class MeetingAttendanceEventConsumer {
             );
 
         } catch (BusinessException | IllegalArgumentException e) {
-            // payload 오류, UUID 오류, enum 오류, 모임원 없음 등은 재시도해도 성공하지 않는 비재시도성 오류
+            // payload 필드 누락/공백, UUID 오류, enum 오류, 모임원 없음 등은 재시도해도 성공하지 않는 비재시도성 오류
             // 원본 message에는 note 등 사용자 입력값이 포함될 수 있으므로 로그에 남기지 않는다.
             log.warn(
                     "출석 이벤트 비재시도성 실패: eventId={}, attendanceId={}, reason={}",
@@ -169,5 +172,23 @@ public class MeetingAttendanceEventConsumer {
             // 같은 이벤트가 이미 처리 중이거나 처리 완료된 것으로 보고 skip한다.
             return false;
         }
+    }
+
+    // 필수 문자열 필드 추출
+    // 필드가 없거나 null 또는 공백이면 비재시도성 예외로 분류되도록 IllegalArgumentException을 발생시킨다.
+    private String requiredText(JsonNode node, String fieldName) {
+        JsonNode value = node.get(fieldName);
+
+        if (value == null || value.isNull()) {
+            throw new IllegalArgumentException("Missing required field: " + fieldName);
+        }
+
+        String text = value.asText();
+
+        if (text == null || text.isBlank()) {
+            throw new IllegalArgumentException("Blank required field: " + fieldName);
+        }
+
+        return text;
     }
 }
