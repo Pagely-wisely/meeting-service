@@ -7,6 +7,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 // 모임 멤버 JPA Repository
 public interface JpaMeetingMemberRepository extends JpaRepository<MeetingMember, UUID> {
@@ -42,5 +44,12 @@ public interface JpaMeetingMemberRepository extends JpaRepository<MeetingMember,
             UUID meetingId,
             UUID userId,
             MeetingMemberStatus status
+    );
+
+    // 유저가 속한 모임의 id 목록 조회
+    @Query("select distinct m.meetingId from MeetingMember m where m.userId = :userId and m.status in :statuses and m.deletedAt is null")
+    List<UUID> findDistinctMeetingIdsByUserIdAndStatusesAndDeletedAtIsNull(
+            @Param("userId") UUID userId,
+            @Param("statuses") List<MeetingMemberStatus> statuses
     );
 }
