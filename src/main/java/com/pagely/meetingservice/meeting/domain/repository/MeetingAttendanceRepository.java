@@ -35,6 +35,9 @@ public interface MeetingAttendanceRepository {
     // 특정 모임에서 내 출석 목록 조회 - 통계 계산용 전체 조회
     List<MeetingAttendance> findByMeetingIdAndUserId(UUID meetingId, UUID userId);
 
+    // 특정 유저의 참석 행 전체 조회
+    List<MeetingAttendance> findAllByUserId(UUID userId);
+
     // 특정 일정에 이미 출석 등록했는지 확인
     boolean existsByScheduleIdAndUserId(UUID scheduleId, UUID userId);
 }
