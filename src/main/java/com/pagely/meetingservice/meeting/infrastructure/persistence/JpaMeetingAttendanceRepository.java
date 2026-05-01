@@ -39,4 +39,7 @@ public interface JpaMeetingAttendanceRepository extends JpaRepository<MeetingAtt
 
     // 특정 일정에 이미 참석 등록했는지 확인
     boolean existsByScheduleIdAndUserIdAndDeletedAtIsNull(UUID scheduleId, UUID userId);
+
+    // 특정 유저의 모든 참석 행 조회
+    List<MeetingAttendance> findAllByUserIdAndDeletedAtIsNull(UUID userId);
 }
