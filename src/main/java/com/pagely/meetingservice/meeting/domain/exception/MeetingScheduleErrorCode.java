@@ -36,14 +36,15 @@ public enum MeetingScheduleErrorCode implements ErrorCode {
      * =========================================================
      */
     MEETING_SCHEDULE_NOT_FOUND(HttpStatus.NOT_FOUND, "MEETING_SCHEDULE_NOT_FOUND", "모임 일정을 찾을 수 없습니다."), // 일정 조회 실패
-
+    ONE_TIME_MEETING_CANNOT_CREATE_ADDITIONAL_SCHEDULE(HttpStatus.CONFLICT,
+            "ONE_TIME_MEETING_CANNOT_CREATE_ADDITIONAL_SCHEDULE", "일회성 모임은 추가 일정을 생성할 수 없습니다."),
     /*
      * =========================================================
      * 409 CONFLICT
      * =========================================================
      */
     SCHEDULE_NUMBER_DUPLICATED(HttpStatus.CONFLICT, "SCHEDULE_NUMBER_DUPLICATED",
-     "회차 번호가 중복됩니다."); // 회차 번호 중복
+            "회차 번호가 중복됩니다."); // 회차 번호 중복
 
     private final HttpStatus httpStatus;
     private final String code;

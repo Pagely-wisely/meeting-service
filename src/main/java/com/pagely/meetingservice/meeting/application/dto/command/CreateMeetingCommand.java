@@ -9,27 +9,31 @@ import java.util.UUID;
 
 // 모임 생성 Command
 public record CreateMeetingCommand(
-        UUID hostId, // 모임장 ID
-        String bookId, // 책 ID
-        String title, // 모임명
-        String description, // 모임 설명
-        MeetingType meetingType, // 모임 유형
-        LocalDateTime recruitStartAt, // 모집 시작 일시
-        LocalDateTime recruitEndAt, // 모집 종료 일시
-        Integer recruitMax, // 모집 정원
-        ReadingLevel readingLevel, // 독서 난이도
-        String ruleMemo, // 규칙 메모
-        RecruitRate recruitRate, // 모집 주기
-        Boolean freePaid, // 무료/유료 여부
-        UUID createdBy // 생성자 ID
+        UUID hostId,
+        String bookId,
+        String title,
+        String description,
+        MeetingType meetingType,
+        LocalDateTime recruitStartAt,
+        LocalDateTime recruitEndAt,
+        Integer recruitMax,
+        ReadingLevel readingLevel,
+        String ruleMemo,
+        RecruitRate recruitRate,
+        Boolean freePaid,
+        LocalDateTime scheduleStartAt,
+        String discussionNote,
+        UUID createdBy
 ) {
+
+    private static final String DEFAULT_MEETING_BOOK_ID = "-";
 
     // Command → 모임 엔티티 변환
     public Meeting toMeeting(UUID meetingId, LocalDateTime now) {
         return Meeting.create(
                 meetingId,
                 hostId,
-                bookId,
+                resolveBookId(),
                 title,
                 description,
                 meetingType,
@@ -39,9 +43,18 @@ public record CreateMeetingCommand(
                 readingLevel,
                 ruleMemo,
                 recruitRate,
-                Boolean.TRUE.equals(freePaid),
+                freePaid,
                 now,
                 createdBy
         );
+    }
+
+    // 정기 모임처럼 모임 자체에 도서가 없어도 되는 경우 null 저장을 방지하기 위한 기본값 보정
+    private String resolveBookId() {
+        if (bookId == null || bookId.isBlank()) {
+            return DEFAULT_MEETING_BOOK_ID;
+        }
+
+        return bookId;
     }
 }

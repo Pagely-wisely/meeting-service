@@ -11,6 +11,7 @@ import com.pagely.meetingservice.meeting.domain.event.MeetingScheduleStatusChang
 import com.pagely.meetingservice.meeting.domain.exception.MeetingErrorCode;
 import com.pagely.meetingservice.meeting.domain.exception.MeetingMemberErrorCode;
 import com.pagely.meetingservice.meeting.domain.exception.MeetingScheduleErrorCode;
+import com.pagely.meetingservice.meeting.domain.model.Meeting;
 import com.pagely.meetingservice.meeting.domain.model.MeetingAttendance;
 import com.pagely.meetingservice.meeting.domain.model.MeetingMember;
 import com.pagely.meetingservice.meeting.domain.model.MeetingSchedule;
@@ -38,12 +39,18 @@ public class MeetingScheduleCommandService {
     private final BookProvider bookProvider;
 
     // 모임 일정 생성
-    @SuppressWarnings("unused")
     @Transactional
     public MeetingScheduleResult createSchedule(CreateMeetingScheduleCommand command) {
         // 일정을 생성할 모임이 실제 존재하는지 확인
-        meetingRepository.findByIdForUpdate(command.meetingId())
+        Meeting meeting = meetingRepository.findByIdForUpdate(command.meetingId())
                 .orElseThrow(() -> new BusinessException(MeetingErrorCode.MEETING_NOT_FOUND));
+
+        // 일회성 모임은 모임 생성 시 일정이 자동 생성되므로 추가 일정 생성을 막는다.
+        if (meeting.isOneTime()) {
+            throw new BusinessException(
+                    MeetingScheduleErrorCode.ONE_TIME_MEETING_CANNOT_CREATE_ADDITIONAL_SCHEDULE
+            );
+        }
 
         // 요청자가 해당 모임의 멤버인지 확인
         MeetingMember requester = meetingMemberRepository.findByMeetingIdAndUserId(
@@ -58,8 +65,6 @@ public class MeetingScheduleCommandService {
         }
 
         // 정기 모임 일정 생성 전에 bookId 유효성을 Book Service 내부 API로 검증한다.
-        // Book Service에 책이 없으면 Book Service가 외부 API를 통해 생성 후 반환한다.
-        // bookId가 비어 있는 경우에는 BookProvider 내부에서 검증을 건너뛴다.
         bookProvider.validateBook(command.bookId());
 
         // 기존 일정 중 가장 큰 회차 번호를 기준으로 다음 회차 번호 계산
@@ -80,14 +85,9 @@ public class MeetingScheduleCommandService {
         // 생성된 일정 저장
         MeetingSchedule savedSchedule = meetingScheduleRepository.save(schedule);
 
-        // 일정 생성 이벤트 메시지 생성
-        // 저장된 일정 ID와 최종 상태를 payload에 담기 위해 저장 이후 이벤트를 생성한다.
-        MeetingScheduleCreatedEvent event = MeetingScheduleCreatedEvent.of(savedSchedule);
+        // 일정 생성 이벤트 발행
+        eventPublisher.publish(MeetingScheduleCreatedEvent.of(savedSchedule));
 
-        // 일정 생성 이벤트를 Kafka로 발행한다.
-        eventPublisher.publish(event);
-
-        // 저장된 일정 결과 DTO 반환
         return MeetingScheduleResult.from(savedSchedule);
     }
 
@@ -95,7 +95,7 @@ public class MeetingScheduleCommandService {
     @Transactional
     public MeetingScheduleResult changeScheduleStatus(UpdateScheduleStatusCommand command) {
         // 요청한 모임이 실제 존재하는지 확인
-        meetingRepository.findById(command.meetingId())
+        Meeting meeting = meetingRepository.findByIdForUpdate(command.meetingId())
                 .orElseThrow(() -> new BusinessException(MeetingErrorCode.MEETING_NOT_FOUND));
 
         // 상태를 변경할 일정 조회
@@ -120,7 +120,6 @@ public class MeetingScheduleCommandService {
         }
 
         // FINISHED 상태로 변경하는 경우 출석 정보를 함께 확인하여 일정 종료 처리
-        // 그 외 상태 변경은 도메인의 상태 전이 규칙에 따라 처리
         if (command.status() == MeetingScheduleStatus.FINISHED) {
             List<MeetingAttendance> attendances = meetingAttendanceRepository.findByScheduleId(command.scheduleId());
             schedule.finish(attendances, command.updatedBy());
@@ -128,20 +127,19 @@ public class MeetingScheduleCommandService {
             schedule.changeStatus(command.status(), command.updatedBy());
         }
 
-        // 일정 상태 변경 이벤트 메시지 생성
-        // 상태 변경이 끝난 뒤 생성해야 변경된 최종 상태가 payload에 담긴다.
-        MeetingScheduleStatusChangedEvent event = MeetingScheduleStatusChangedEvent.of(schedule);
+        // 일회성 모임의 일정이 종료되면 모임도 함께 종료 처리한다.
+        if (meeting.isOneTime() && schedule.getStatus() == MeetingScheduleStatus.FINISHED) {
+            meeting.finish(command.updatedBy());
+        }
 
-        // 일정 상태 변경 이벤트를 Kafka로 발행한다.
-        eventPublisher.publish(event);
+        // 일정 상태 변경 이벤트 발행
+        eventPublisher.publish(MeetingScheduleStatusChangedEvent.of(schedule));
 
         return MeetingScheduleResult.from(schedule);
     }
 
     // 다음 회차 번호 계산
     private int calculateNextScheduleNumber(UUID meetingId) {
-        // 해당 모임의 기존 일정 목록에서 가장 큰 회차 번호를 찾고 +1
-        // 일정이 하나도 없으면 1회차부터 시작
         return meetingScheduleRepository.findByMeetingId(meetingId)
                 .stream()
                 .mapToInt(MeetingSchedule::getScheduleNumber)
