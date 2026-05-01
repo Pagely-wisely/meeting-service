@@ -225,6 +225,16 @@ public class Meeting extends BaseEntity {
 
     // 모임 종료 처리
     public void finish(UUID updatedBy) {
+        // 이미 종료된 모임이면 중복 처리하지 않는다.
+        if (this.meetingStatus == MeetingStatus.COMPLETED) {
+            return;
+        }
+
+        // 취소된 모임은 종료 처리하지 않는다.
+        if (this.meetingStatus == MeetingStatus.CANCELLED) {
+            throw new BusinessException(MeetingErrorCode.INVALID_MEETING_STATUS);
+        }
+
         this.meetingStatus = MeetingStatus.COMPLETED;
         this.updatedBy = updatedBy;
         this.updatedAt = LocalDateTime.now();

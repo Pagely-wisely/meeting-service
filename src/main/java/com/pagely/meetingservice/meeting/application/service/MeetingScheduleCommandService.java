@@ -127,7 +127,7 @@ public class MeetingScheduleCommandService {
             schedule.changeStatus(command.status(), command.updatedBy());
         }
 
-        // 일회성 모임의 일정이 종료되면 모임도 함께 종료 처리한다.
+        // 일회성 모임의 일정이 종료되면 모임 상태도 COMPLETED로 함께 변경한다.
         if (meeting.isOneTime() && schedule.getStatus() == MeetingScheduleStatus.FINISHED) {
             meeting.finish(command.updatedBy());
         }
