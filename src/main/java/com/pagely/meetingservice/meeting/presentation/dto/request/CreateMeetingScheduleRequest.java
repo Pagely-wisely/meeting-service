@@ -10,6 +10,7 @@ public record CreateMeetingScheduleRequest(
         @NotNull
         LocalDateTime startAt,
 
+        // TODO : discussionNote 제거
         String discussionNote
 ) {
 }

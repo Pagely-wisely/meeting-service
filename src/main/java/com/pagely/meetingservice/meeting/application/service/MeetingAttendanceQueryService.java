@@ -41,6 +41,8 @@ public class MeetingAttendanceQueryService {
     ) {
         validateScheduleAttendanceViewPermission(meetingId, scheduleId, userId);
 
+        // TODO : 에러처리
+
         // 해당 일정에 등록된 출석 정보를 페이징 조회 후 결과 DTO로 변환
         return meetingAttendanceRepository.findByScheduleId(scheduleId, pageable)
                 .map(MeetingAttendanceResult::from);
