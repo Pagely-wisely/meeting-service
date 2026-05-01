@@ -94,4 +94,10 @@ public class MeetingAttendanceRepositoryAdapter implements MeetingAttendanceRepo
                 userId
         );
     }
+
+    // 특정 유저의 모든 참석 행 조회
+    @Override
+    public List<MeetingAttendance> findAllByUserId(UUID userId){
+        return jpaMeetingAttendanceRepository.findAllByUserIdAndDeletedAtIsNull(userId);
+    }
 }
