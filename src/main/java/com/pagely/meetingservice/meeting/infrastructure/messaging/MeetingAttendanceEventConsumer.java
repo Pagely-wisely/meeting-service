@@ -3,6 +3,7 @@ package com.pagely.meetingservice.meeting.infrastructure.messaging;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pagely.common.exception.BusinessException;
+import com.pagely.meetingservice.meeting.application.service.WarningThresholdService;
 import com.pagely.meetingservice.meeting.domain.exception.MeetingMemberErrorCode;
 import com.pagely.meetingservice.meeting.domain.model.AttendanceStatus;
 import com.pagely.meetingservice.meeting.domain.model.MeetingMember;
@@ -12,6 +13,8 @@ import com.pagely.meetingservice.meeting.infrastructure.persistence.JpaProcessed
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
@@ -27,6 +30,8 @@ public class MeetingAttendanceEventConsumer {
 
     private final MeetingMemberRepository meetingMemberRepository;
     private final JpaProcessedEventRepository processedEventRepository;
+    private final WarningThresholdService warningThresholdService;
+    @Qualifier("kafkaConsumerObjectMapper")
     private final ObjectMapper objectMapper;
 
     // 출석 상태 변경 이벤트 수신
@@ -34,7 +39,7 @@ public class MeetingAttendanceEventConsumer {
     @Transactional
     @KafkaListener(
             topics = "meeting.attendance.status-changed",
-            groupId = "meeting-service"
+            groupId = "${spring.kafka.consumer.group-id}"
     )
     public void consumeAttendanceStatusChanged(String message) {
         String eventId = null;
@@ -114,6 +119,11 @@ public class MeetingAttendanceEventConsumer {
             // 출석 상태에 따라 지각/결석/경고 카운트를 누적한다.
             // 실제 누적 규칙은 MeetingMember 도메인 메서드에 위임한다.
             member.applyAttendancePenalty(status, changedBy);
+
+            meetingMemberRepository.save(member);
+
+            // 누적 반영 후 경고 횟수로 강퇴 여부만 처리
+            warningThresholdService.handleAttendanceStatusChanged(eventId, meetingId, userId);
 
             // 패널티 적용 후 카운트 확인
             log.info(
