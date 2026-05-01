@@ -53,3 +53,14 @@ eureka:
     enabled: false
     register-with-eureka: false
     fetch-registry: false
+
+book-service:
+  url: http://localhost:19051
+  
+cloud:
+  openfeign:
+    client:
+      config:
+        bookservice:
+          connect-timeout: 1000
+          read-timeout: 2000

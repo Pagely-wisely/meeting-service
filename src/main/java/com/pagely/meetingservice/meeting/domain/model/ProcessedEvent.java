@@ -1,13 +1,13 @@
 package com.pagely.meetingservice.meeting.domain.model;
 
-import java.time.LocalDateTime;
-import java.util.UUID;
-
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import java.time.LocalDateTime;
+import java.util.UUID;
 
+// Kafka Consumer 이벤트 중복 처리 방지용 엔티티
 @Entity
 @Table(name = "p_processed_event")
 public class ProcessedEvent {

@@ -6,7 +6,6 @@ import com.pagely.meetingservice.meeting.domain.repository.MeetingAttendanceRepo
 import com.pagely.meetingservice.meeting.domain.repository.MeetingMemberRepository;
 import com.pagely.meetingservice.meeting.presentation.dto.response.InternalReadableMeetingsResponse;
 import com.pagely.meetingservice.meeting.presentation.dto.response.InternalReadableMeetingsResponse.MeetingWithSchedules;
-
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
@@ -37,23 +36,23 @@ public class MeetingInternalQueryService {
     // 특정 유저가 속한 모임마다 참석 등록한 일정 ID 목록
     public InternalReadableMeetingsResponse getReadableMeetings(UUID userId) {
         List<UUID> meetingIds = new ArrayList<>(
-            meetingMemberRepository.findMeetingIdsByUserIdAndStatuses(userId, READABLE_STATUSES)
+                meetingMemberRepository.findMeetingIdsByUserIdAndStatuses(userId, READABLE_STATUSES)
         );
         meetingIds.sort(Comparator.naturalOrder());
 
         List<MeetingAttendance> attendances = meetingAttendanceRepository.findAllByUserId(userId);
         Map<UUID, List<UUID>> scheduleIdsByMeeting = new LinkedHashMap<>();
-        for(MeetingAttendance attendance : attendances){
+        for (MeetingAttendance attendance : attendances) {
             UUID meetingId = attendance.getMeetingId();
             scheduleIdsByMeeting
-            .computeIfAbsent(meetingId, ignored -> new ArrayList<>())
-            .add(attendance.getScheduleId());
+                    .computeIfAbsent(meetingId, ignored -> new ArrayList<>())
+                    .add(attendance.getScheduleId());
         }
-        scheduleIdsByMeeting.replaceAll((ignored, ids)->ids // 일정 ID 리스트 정리
-        .stream().distinct().sorted().toList()); // 중복 제거 후 UUID 순 정렬
+        scheduleIdsByMeeting.replaceAll((ignored, ids) -> ids // 일정 ID 리스트 정리
+                .stream().distinct().sorted().toList()); // 중복 제거 후 UUID 순 정렬
 
         List<MeetingWithSchedules> items = new ArrayList<>();
-        for(UUID meetingId : meetingIds){
+        for (UUID meetingId : meetingIds) {
             List<UUID> scheduleIds = scheduleIdsByMeeting.getOrDefault(meetingId, List.of());
             items.add(new MeetingWithSchedules(meetingId, scheduleIds));
         }

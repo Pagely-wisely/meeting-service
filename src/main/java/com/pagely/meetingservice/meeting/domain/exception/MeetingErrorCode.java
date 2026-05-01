@@ -19,6 +19,7 @@ public enum MeetingErrorCode implements ErrorCode {
     INVALID_RECRUIT_PERIOD(HttpStatus.BAD_REQUEST, "INVALID_RECRUIT_PERIOD",
             "모집 시작 시각은 종료 시각보다 늦을 수 없습니다."), // 모집 기간 유효성 실패
     INVALID_MEETING_STATUS(HttpStatus.BAD_REQUEST, "INVALID_MEETING_STATUS", "현재 모임 상태에서는 변경할 수 없습니다."), // 모임 상태 변경 불가
+    INVALID_BOOK(HttpStatus.BAD_REQUEST, "INVALID_BOOK", "유효하지 않은 도서 정보입니다."),
 
     /*
      * =========================================================
