@@ -15,56 +15,42 @@ public class ProcessedEvent {
     @Id
     private UUID id;
 
-    // 이벤트를 처리한 Consumer 이름
     @Column(name = "consumer_name", nullable = false, length = 100)
     private String consumerName;
 
-    // BaseEvent의 eventId
     @Column(name = "event_id", nullable = false, length = 100)
     private String eventId;
 
-    // 이벤트 처리 완료 시각
     @Column(name = "processed_at", nullable = false)
     private LocalDateTime processedAt;
 
-    protected ProcessedEvent() {
-    }
+    protected ProcessedEvent() {}
 
-    private ProcessedEvent(
-            UUID id,
-            String consumerName,
-            String eventId,
-            LocalDateTime processedAt
-    ) {
+    private ProcessedEvent(UUID id, String consumerName, String eventId, LocalDateTime processedAt){
         this.id = id;
         this.consumerName = consumerName;
         this.eventId = eventId;
         this.processedAt = processedAt;
     }
 
-    // 처리 완료 이벤트 생성
     public static ProcessedEvent of(String consumerName, String eventId) {
-        return new ProcessedEvent(
-                UUID.randomUUID(),
-                consumerName,
-                eventId,
-                LocalDateTime.now()
-        );
+        return new ProcessedEvent(UUID.randomUUID(), consumerName, eventId, LocalDateTime.now());
     }
 
-    public UUID getId() {
+    public UUID getId(){
         return id;
     }
 
-    public String getConsumerName() {
+    public String getConsumerName(){
         return consumerName;
     }
 
-    public String getEventId() {
+    public String getEventId(){
         return eventId;
     }
 
-    public LocalDateTime getProcessedAt() {
+    public LocalDateTime getProcessedAt(){
         return processedAt;
     }
+    
 }

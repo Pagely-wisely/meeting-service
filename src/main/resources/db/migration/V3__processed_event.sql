@@ -1,12 +1,11 @@
 -- =========================
 -- TABLE: p_processed_event
 -- =========================
-CREATE TABLE p_processed_event
-(
-    id            UUID PRIMARY KEY,
+CREATE TABLE p_processed_event (
+    id UUID PRIMARY KEY,
     consumer_name VARCHAR(100) NOT NULL,
-    event_id      VARCHAR(100) NOT NULL,
-    processed_at  TIMESTAMP    NOT NULL DEFAULT NOW()
+    event_id VARCHAR(100) NOT NULL,
+    processed_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
 -- =========================
@@ -18,6 +17,6 @@ ALTER TABLE p_processed_event
 -- =========================
 -- INDEX
 -- =========================
-CREATE INDEX idx_p_processed_event_consumer_name ON p_processed_event (consumer_name);
-CREATE INDEX idx_p_processed_event_event_id ON p_processed_event (event_id);
-CREATE INDEX idx_p_processed_event_processed_at ON p_processed_event (processed_at);
+CREATE INDEX idx_p_processed_event_consumer_name ON p_processed_event(consumer_name);
+CREATE INDEX idx_p_processed_event_event_id ON p_processed_event(event_id);
+CREATE INDEX idx_p_processed_event_processed_at ON p_processed_event(processed_at);

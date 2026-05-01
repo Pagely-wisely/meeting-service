@@ -95,4 +95,9 @@ public class MeetingMemberRepositoryAdapter implements MeetingMemberRepository {
                 statuses
         );
     }
+
+    @Override
+    public Optional<MeetingMember> findByMeetingIdAndUserIdForUpdate(UUID meetingId, UUID userId){
+        return jpaMeetingMemberRepository.findByMeetingIdAndUserIdForUpdate(meetingId, userId);
+    }
 }

@@ -16,6 +16,9 @@ public interface MeetingMemberRepository {
     // ID로 멤버 조회
     Optional<MeetingMember> findById(UUID memberId);
 
+    // 멤버 조회(쓰기 락)
+    Optional<MeetingMember> findByMeetingIdAndUserIdForUpdate(UUID meetingId, UUID userId);
+
     // 모임과 유저 기준 멤버 조회
     Optional<MeetingMember> findByMeetingIdAndUserId(UUID meetingId, UUID userId);
 
