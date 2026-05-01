@@ -135,4 +135,16 @@ public class MeetingSchedule extends BaseEntity {
     public boolean isOngoing() {
         return status == MeetingScheduleStatus.ONGOING;
     }
+
+    // 시작 시간이 되었는지 확인
+    public boolean isStartTimeReached(LocalDateTime now) {
+        return this.status == MeetingScheduleStatus.SCHEDULED
+                && !this.startAt.isAfter(now);
+    }
+
+    // 일정 진행 시작 처리
+    public void start(UUID updatedBy) {
+        // 상태 전이 규칙은 기존 changeStatus()를 재사용한다.
+        changeStatus(MeetingScheduleStatus.ONGOING, updatedBy);
+    }
 }

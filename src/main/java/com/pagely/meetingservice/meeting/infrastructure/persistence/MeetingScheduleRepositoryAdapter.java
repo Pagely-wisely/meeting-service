@@ -3,6 +3,7 @@ package com.pagely.meetingservice.meeting.infrastructure.persistence;
 import com.pagely.meetingservice.meeting.domain.model.MeetingSchedule;
 import com.pagely.meetingservice.meeting.domain.model.MeetingScheduleStatus;
 import com.pagely.meetingservice.meeting.domain.repository.MeetingScheduleRepository;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -75,4 +76,9 @@ public class MeetingScheduleRepositoryAdapter implements MeetingScheduleReposito
         return jpaMeetingScheduleRepository.findByIdAndMeetingIdAndDeletedAtIsNull(scheduleId, meetingId);
     }
 
+    // 시작 시간이 지난 SCHEDULED 상태의 일정 목록 조회
+    @Override
+    public List<MeetingSchedule> findStartDueSchedules(LocalDateTime now, Pageable pageable) {
+        return jpaMeetingScheduleRepository.findStartDueSchedules(now, pageable);
+    }
 }

@@ -37,15 +37,19 @@ public record CreateMeetingRequest(
         Integer recruitMax, // 모집 정원
 
         @NotNull
-        ReadingLevel readingLevel, // 독서 난이도 (BEGINNER, NORMAL, ADVANCED)
+        ReadingLevel readingLevel, // 독서 난이도
 
         String ruleMemo, // 규칙 메모
 
         @NotNull
-        RecruitRate recruitRate, // 모집 주기 (WEEKLY, BIWEEKLY, MONTHLY)
+        RecruitRate recruitRate, // 모임 주기
 
         @NotNull
-        Boolean freePaid // 무료/유료 여부
+        Boolean freePaid, // 무료/유료 여부
+
+        LocalDateTime scheduleStartAt, // 일회성 모임 일정 시작일
+
+        String discussionNote // 일회성 모임 일정 토론 메모
 ) {
 
     // 요청 DTO → 생성 커맨드 변환
@@ -63,6 +67,8 @@ public record CreateMeetingRequest(
                 ruleMemo,
                 recruitRate,
                 freePaid,
+                scheduleStartAt,
+                discussionNote,
                 currentUserId // createdBy
         );
     }

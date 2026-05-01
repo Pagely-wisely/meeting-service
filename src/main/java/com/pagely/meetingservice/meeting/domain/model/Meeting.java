@@ -17,7 +17,7 @@ import org.hibernate.type.SqlTypes;
 
 @Entity
 @Table(name = "p_meeting")
-public class Meeting extends BaseEntity{
+public class Meeting extends BaseEntity {
 
     @Id
     private UUID id;
@@ -142,7 +142,8 @@ public class Meeting extends BaseEntity{
         this.updatedBy = updatedBy;
         this.updatedAt = LocalDateTime.now();
     }
-        // 모집 마감 시간이 지났으면 RECRUITING → CLOSED 로 전이
+
+    // 모집 마감 시간이 지났으면 RECRUITING → CLOSED 로 전이
     public void applyRecruitClosedIfPeriodEnded(LocalDateTime now, UUID updatedBy) {
         if (this.recruitStatus != RecruitStatus.RECRUITING) {
             return;
@@ -151,6 +152,18 @@ public class Meeting extends BaseEntity{
             return;
         }
         changeRecruitStatus(RecruitStatus.CLOSED, updatedBy);
+    }
+
+    // 모임 진행 시작 처리
+    public void start(UUID updatedBy) {
+        // 시작 전 상태일 때만 진행 중으로 변경한다.
+        if (this.meetingStatus != MeetingStatus.UPCOMING) {
+            return;
+        }
+
+        this.meetingStatus = MeetingStatus.IN_PROGRESS;
+        this.updatedBy = updatedBy;
+        this.updatedAt = LocalDateTime.now();
     }
 
     public UUID getId() {
@@ -215,5 +228,27 @@ public class Meeting extends BaseEntity{
 
     public boolean canViewJoinApplications(UUID userId) {
         return this.hostId.equals(userId);
+    }
+
+    // 일회성 모임인지 확인
+    public boolean isOneTime() {
+        return this.meetingType == MeetingType.ONES;
+    }
+
+    // 모임 종료 처리
+    public void finish(UUID updatedBy) {
+        // 이미 종료된 모임이면 중복 처리하지 않는다.
+        if (this.meetingStatus == MeetingStatus.COMPLETED) {
+            return;
+        }
+
+        // 취소된 모임은 종료 처리하지 않는다.
+        if (this.meetingStatus == MeetingStatus.CANCELLED) {
+            throw new BusinessException(MeetingErrorCode.INVALID_MEETING_STATUS);
+        }
+
+        this.meetingStatus = MeetingStatus.COMPLETED;
+        this.updatedBy = updatedBy;
+        this.updatedAt = LocalDateTime.now();
     }
 }
