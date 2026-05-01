@@ -2,6 +2,7 @@ package com.pagely.meetingservice.meeting.domain.repository;
 
 import com.pagely.meetingservice.meeting.domain.model.MeetingSchedule;
 import com.pagely.meetingservice.meeting.domain.model.MeetingScheduleStatus;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -34,4 +35,7 @@ public interface MeetingScheduleRepository {
 
     // 회차 번호 중복 여부 확인
     boolean existsByMeetingIdAndScheduleNumber(UUID meetingId, int scheduleNumber);
+
+    // 시작 시간이 지난 SCHEDULED 상태의 일정 목록 조회
+    List<MeetingSchedule> findStartDueSchedules(LocalDateTime now, Pageable pageable);
 }

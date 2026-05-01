@@ -154,19 +154,16 @@ public class Meeting extends BaseEntity {
         changeRecruitStatus(RecruitStatus.CLOSED, updatedBy);
     }
 
-    // 모임 진행 처리
+    // 모임 진행 시작 처리
     public void start(UUID updatedBy) {
-        // 이미 진행 중이면 중복 처리하지 않는다.
-        if (this.meetingStatus == MeetingStatus.IN_PROGRESS) {
+        // 시작 전 상태일 때만 진행 중으로 변경한다.
+        if (this.meetingStatus != MeetingStatus.UPCOMING) {
             return;
         }
 
-        // 시작 전 상태일 때만 진행 중으로 변경한다.
-        if (this.meetingStatus == MeetingStatus.UPCOMING) {
-            this.meetingStatus = MeetingStatus.IN_PROGRESS;
-            this.updatedBy = updatedBy;
-            this.updatedAt = LocalDateTime.now();
-        }
+        this.meetingStatus = MeetingStatus.IN_PROGRESS;
+        this.updatedBy = updatedBy;
+        this.updatedAt = LocalDateTime.now();
     }
 
     public UUID getId() {

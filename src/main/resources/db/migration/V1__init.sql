@@ -203,6 +203,7 @@ CREATE INDEX idx_p_meeting_members_deleted_at ON p_meeting_members(deleted_at);
 CREATE INDEX idx_p_meeting_schedules_meeting_id ON p_meeting_schedules(meeting_id);
 CREATE INDEX idx_p_meeting_schedules_start_at ON p_meeting_schedules(start_at);
 CREATE INDEX idx_p_meeting_schedules_deleted_at ON p_meeting_schedules(deleted_at);
+CREATE INDEX idx_p_meeting_schedules_status_start_at ON p_meeting_schedules(status, start_at) WHERE deleted_at IS NULL;
 
 CREATE INDEX idx_p_meeting_attendance_meeting_id ON p_meeting_attendance(meeting_id);
 CREATE INDEX idx_p_meeting_attendance_schedule_id ON p_meeting_attendance(schedule_id);
