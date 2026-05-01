@@ -127,6 +127,11 @@ public class MeetingScheduleCommandService {
             schedule.changeStatus(command.status(), command.updatedBy());
         }
 
+        // 일정이 진행 중이 되면, 시작 전 모임도 진행 중으로 변경한다.
+        if (schedule.getStatus() == MeetingScheduleStatus.ONGOING) {
+            meeting.start(command.updatedBy());
+        }
+
         // 일회성 모임의 일정이 종료되면 모임 상태도 COMPLETED로 함께 변경한다.
         if (meeting.isOneTime() && schedule.getStatus() == MeetingScheduleStatus.FINISHED) {
             meeting.finish(command.updatedBy());
