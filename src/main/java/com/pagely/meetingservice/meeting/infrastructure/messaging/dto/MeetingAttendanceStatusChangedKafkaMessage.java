@@ -25,6 +25,7 @@ public record MeetingAttendanceStatusChangedKafkaMessage(
         UUID userId,
         AttendanceStatus status,
         LocalDateTime checkedAt,
-        String note
+        String note,
+        UUID changedBy
     ){}
 }
