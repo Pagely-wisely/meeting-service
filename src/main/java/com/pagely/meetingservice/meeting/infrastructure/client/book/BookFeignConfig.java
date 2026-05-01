@@ -2,15 +2,15 @@ package com.pagely.meetingservice.meeting.infrastructure.client.book;
 
 import feign.RequestInterceptor;
 import jakarta.servlet.http.HttpServletRequest;
-import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
 // Book Service Feign 호출 설정
+@Slf4j
 @Configuration
-@RequiredArgsConstructor
 public class BookFeignConfig {
 
     @Bean
@@ -20,7 +20,7 @@ public class BookFeignConfig {
                     (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
 
             if (attributes == null) {
-                System.out.println("Feign 인증 헤더 전달 실패: RequestContext 없음");
+                log.debug("Feign 헤더 전달 생략: RequestContext 없음");
                 return;
             }
 
@@ -30,9 +30,10 @@ public class BookFeignConfig {
             String userId = request.getHeader("X-User-Id");
             String userRole = request.getHeader("X-User-Role");
 
-            System.out.println("Feign Authorization = " + authorization);
-            System.out.println("Feign X-User-Id = " + userId);
-            System.out.println("Feign X-User-Role = " + userRole);
+            log.debug("Feign 헤더 전달: hasAuthorization={}, hasUserId={}, hasUserRole={}",
+                    authorization != null && !authorization.isBlank(),
+                    userId != null && !userId.isBlank(),
+                    userRole != null && !userRole.isBlank());
 
             if (authorization != null && !authorization.isBlank()) {
                 template.header("Authorization", authorization);
