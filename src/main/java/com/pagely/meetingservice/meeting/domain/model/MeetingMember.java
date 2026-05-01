@@ -127,9 +127,9 @@ public class MeetingMember extends BaseEntity {
         }
 
         // 경고 3회 이상이면 모임 강퇴 처리
-        if (this.warningCount >= 3) {
-            this.status = MeetingMemberStatus.EXPELLED;
-        }
+        // if (this.warningCount >= 3) {
+        //     this.status = MeetingMemberStatus.EXPELLED;
+        // }
 
         this.updatedBy = updatedBy;
         this.updatedAt = LocalDateTime.now();
