@@ -15,23 +15,13 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class WarningThresholdService {
 
-    public static final String CONSUMER_NAME = "meeting-warning-expel-consumer";
     private static final int WARNING_EXPEL_THRESHOLD = 3; // 경고 임계치 3회
     private static final UUID SYSTEM_ACTOR_ID = UUID.fromString("00000000-0000-0000-0000-000000000000"); // 시스템 감사용 UUID
 
-    private final JpaProcessedEventRepository processedEventRepository;
     private final MeetingMemberRepository meetingMemberRepository;
 
     @Transactional
     public void handleAttendanceStatusChanged(String eventId, UUID meetingId, UUID userId) {
-        if (processedEventRepository.findByConsumerNameAndEventId(CONSUMER_NAME, eventId).isPresent()) { // 이미 처리된 이벤트인지 검증
-            return;
-        }
-        try {
-            processedEventRepository.save(ProcessedEvent.of(CONSUMER_NAME, eventId));  // 처리 성공을 선점 기록해 재처리 방지
-        } catch (DataIntegrityViolationException ex) {
-            return;
-        }
 
         MeetingMember member = meetingMemberRepository.findByMeetingIdAndUserIdForUpdate(meetingId, userId).orElse(null);
         if (member == null) {
