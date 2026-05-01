@@ -112,7 +112,6 @@ public class MeetingAttendanceCommandService {
         }
 
         // 출석 상태 변경은 진행 중인 일정에서만 가능
-        // 예정/완료/취소된 일정의 출석 상태 변경 방지
         if (!schedule.isOngoing()) {
             throw new BusinessException(MeetingAttendanceErrorCode.ONLY_ONGOING_SCHEDULE_CAN_CHANGE_ATTENDANCE);
         }
@@ -152,35 +151,28 @@ public class MeetingAttendanceCommandService {
         AttendanceStatus finalStatus = command.status();
 
         // 출석 요청이 들어와도 일정 시작 후 10분이 지난 경우 자동으로 지각 처리
-        // 출석 시간 정책을 애플리케이션 서비스에서 일관되게 적용
         if (command.status() == AttendanceStatus.ATTENDED
                 && LocalDateTime.now().isAfter(schedule.getStartAt().plusMinutes(10))) {
             finalStatus = AttendanceStatus.LATE;
         }
 
-        // 최종 출석 상태, 비고, 수정자를 반영
+        // 출석 상태만 변경한다.
+        // 경고/지각/결석 누적은 이 메서드에서 직접 처리하지 않고,
+        // 출석 상태 변경 이벤트를 수신한 Consumer가 담당한다.
         attendance.changeStatus(
                 finalStatus,
                 command.note(),
                 command.updatedBy()
         );
 
-        // 출석 상태 변경 이벤트 메시지 생성
-        // 상태 변경 이후 생성해야 변경된 상태, 체크 시각, 비고가 payload에 담긴다.
-        MeetingAttendanceStatusChangedEvent event = MeetingAttendanceStatusChangedEvent.of(attendance);
+        // 출석 상태 변경 이벤트 생성
+        MeetingAttendanceStatusChangedEvent event = MeetingAttendanceStatusChangedEvent.of(
+                attendance,
+                command.updatedBy()
+        );
 
-        // 출석 상태 변경 이벤트를 Kafka로 발행한다.
+        // 출석 상태 변경 이벤트 발행
         eventPublisher.publish(event);
-
-        // 출석 상태 변경 결과에 따라 모임원의 패널티 카운트를 누적한다.
-        // - LATE: 지각 수 +1, 경고 수 +1, 지각 3회마다 결석 수 +1
-        // - ABSENT: 결석 수 +1
-        // - ATTENDED, EXCUSED: 패널티 없음
-        //
-        // 주의:
-        // 출석 상태는 PENDING에서 한 번만 변경 가능하므로,
-        // 동일 출석 건에 대한 패널티 중복 누적도 함께 방지된다.
-        targetMember.applyAttendancePenalty(finalStatus, command.updatedBy());
 
         return MeetingAttendanceResult.from(attendance);
     }

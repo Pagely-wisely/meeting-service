@@ -1,5 +1,8 @@
 package com.pagely.meetingservice.meeting.domain.model;
 
+import com.pagely.common.entity.BaseEntity;
+import com.pagely.common.exception.BusinessException;
+import com.pagely.meetingservice.meeting.domain.exception.MeetingMemberErrorCode;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -10,8 +13,6 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
-
-import com.pagely.common.entity.BaseEntity;
 
 // 모임원 엔티티
 @Entity
@@ -91,10 +92,10 @@ public class MeetingMember extends BaseEntity {
 
     // 출석 상태에 따른 패널티 반영
     public void applyAttendancePenalty(AttendanceStatus attendanceStatus, UUID updatedBy) {
-        // null 상태가 들어오면 패널티 기준을 판단할 수 없으므로 즉시 종료
-        // 필요하면 BusinessException으로 바꿔도 됨
+
+        // 출석 상태가 null이면 잘못된 이벤트이므로 즉시 예외 발생
         if (attendanceStatus == null) {
-            return;
+            throw new BusinessException(MeetingMemberErrorCode.INVALID_ATTENDANCE_STATUS);
         }
 
         // 정상 출석과 사유 인정 결석은 패널티 대상이 아님
@@ -104,27 +105,30 @@ public class MeetingMember extends BaseEntity {
         }
 
         // 지각 처리
+        // 정책:
+        // - 지각 1회마다 lateCount만 증가
+        // - 지각 3회 누적 시 경고 1회 증가
         if (attendanceStatus == AttendanceStatus.LATE) {
             this.lateCount++;
 
-            // 현재 임시 정책:
-            // 지각 1회는 경고 1회로 누적한다.
-            this.warningCount++;
-
-            // 지각 3회마다 결석 1회로 환산한다.
-            // lateCount = 3  -> absentCount +1
-            // lateCount = 6  -> absentCount +1
-            // lateCount = 9  -> absentCount +1
-            // 실제 LATE 상태를 ABSENT로 바꾸지는 않고,
-            // 모임원 패널티 카운트에만 환산 결석을 누적한다.
+            // 지각 횟수가 3의 배수가 될 때마다 경고 1회 누적
             if (this.lateCount % 3 == 0) {
-                this.absentCount++;
+                this.warningCount++;
             }
         }
 
         // 결석 처리
+        // 정책:
+        // - 결석 1회 누적
+        // - 결석 1회마다 경고 1회 증가
         if (attendanceStatus == AttendanceStatus.ABSENT) {
             this.absentCount++;
+            this.warningCount++;
+        }
+
+        // 경고 3회 이상이면 모임 강퇴 처리
+        if (this.warningCount >= 3) {
+            this.status = MeetingMemberStatus.EXPELLED;
         }
 
         this.updatedBy = updatedBy;

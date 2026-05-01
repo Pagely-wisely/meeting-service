@@ -15,7 +15,10 @@ public class MeetingAttendanceStatusChangedEvent extends BaseEvent {
         super(DOMAIN_TYPE, attendanceId, payload);
     }
 
-    public static MeetingAttendanceStatusChangedEvent of(MeetingAttendance attendance) {
+    public static MeetingAttendanceStatusChangedEvent of(
+            MeetingAttendance attendance,
+            UUID changedBy
+    ) {
         return new MeetingAttendanceStatusChangedEvent(
                 attendance.getId(),
                 new Payload(
@@ -25,7 +28,8 @@ public class MeetingAttendanceStatusChangedEvent extends BaseEvent {
                         attendance.getUserId(),
                         attendance.getStatus(),
                         attendance.getCheckedAt(),
-                        attendance.getNote()
+                        attendance.getNote(),
+                        changedBy
                 )
         );
     }
@@ -37,7 +41,8 @@ public class MeetingAttendanceStatusChangedEvent extends BaseEvent {
             UUID userId,
             AttendanceStatus status,
             LocalDateTime checkedAt,
-            String note
+            String note,
+            UUID changedBy
     ) {
     }
 }
