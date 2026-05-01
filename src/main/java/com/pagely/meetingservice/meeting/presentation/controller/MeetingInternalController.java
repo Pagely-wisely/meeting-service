@@ -1,7 +1,7 @@
 package com.pagely.meetingservice.meeting.presentation.controller;
 
+import com.pagely.common.response.ApiResponse;
 import com.pagely.meetingservice.meeting.application.service.MeetingInternalQueryService;
-import com.pagely.meetingservice.meeting.presentation.dto.response.InternalReadableMeetingsResponse;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -19,10 +19,8 @@ public class MeetingInternalController {
 
     // 유저 기준 열람 가능 모임 / 모임별 참가 일정 ID
     @GetMapping("/access/readable")
-    public ResponseEntity<InternalReadableMeetingsResponse> getReadableMeetings(@RequestParam UUID userId){
-        return ResponseEntity.ok(
-            meetingInternalQueryService.getReadableMeetings(userId)
-        );
+    public ResponseEntity<ApiResponse> getReadableMeetings(@RequestParam UUID userId) {
+        return ApiResponse.ok(meetingInternalQueryService.getReadableMeetings(userId));
     }
 }
 
