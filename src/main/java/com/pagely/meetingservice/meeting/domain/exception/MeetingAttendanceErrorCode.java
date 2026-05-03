@@ -47,6 +47,7 @@ public enum MeetingAttendanceErrorCode implements ErrorCode {
      * =========================================================
      */
     ATTENDANCE_NOT_FOUND(HttpStatus.NOT_FOUND, "ATTENDANCE_NOT_FOUND", "해당 유저의 참석 등록 내역이 없습니다."), // 참석 등록 내역 없음
+    ATTENDANCE_LIST_NOT_FOUND(HttpStatus.NOT_FOUND, "ATTENDANCE_LIST_NOT_FOUND", "해당 일정의 출석부가 존재하지 않습니다."),
 
     /*
      * =========================================================
