@@ -158,7 +158,6 @@ public class MeetingController {
                 meetingId,
                 req.bookId(),
                 req.startAt(),
-                req.discussionNote(),
                 currentUserId
         );
 

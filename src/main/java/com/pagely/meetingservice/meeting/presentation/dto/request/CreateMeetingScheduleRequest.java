@@ -8,9 +8,6 @@ public record CreateMeetingScheduleRequest(
         String bookId,
 
         @NotNull
-        LocalDateTime startAt,
-
-        // TODO : discussionNote 제거
-        String discussionNote
+        LocalDateTime startAt
 ) {
 }

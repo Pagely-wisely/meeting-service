@@ -77,7 +77,7 @@ public class MeetingScheduleCommandService {
                 nextScheduleNumber,
                 command.bookId(),
                 command.startAt(),
-                command.discussionNote(),
+                null,
                 LocalDateTime.now(),
                 command.requesterId()
         );
