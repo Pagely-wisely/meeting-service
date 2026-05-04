@@ -4,6 +4,7 @@ import com.pagely.common.auth.annotation.AuthRequired;
 import com.pagely.common.auth.annotation.CurrentUserId;
 import com.pagely.common.pagination.PageRequest;
 import com.pagely.common.pagination.PageResponse;
+import com.pagely.common.response.ApiResponse;
 import com.pagely.meetingservice.meeting.application.dto.command.CreateMeetingScheduleCommand;
 import com.pagely.meetingservice.meeting.application.dto.command.UpdateAttendanceStatusCommand;
 import com.pagely.meetingservice.meeting.application.dto.command.UpdateScheduleStatusCommand;
@@ -37,7 +38,6 @@ import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Sort;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -65,7 +65,7 @@ public class MeetingController {
     // 모임 생성
     @AuthRequired
     @PostMapping
-    public ResponseEntity<MeetingResponse> createMeeting(
+    public ResponseEntity<ApiResponse> createMeeting(
             @CurrentUserId UUID currentUserId,
             @Valid @RequestBody CreateMeetingRequest req
     ) {
@@ -73,31 +73,30 @@ public class MeetingController {
                 req.toCommand(currentUserId)
         );
 
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(MeetingResponse.from(result));
+        return ApiResponse.created(MeetingResponse.from(result));
     }
 
     // 모임 전체 조회
     @GetMapping
-    public PageResponse<MeetingSummaryResponse> getMeetings(PageRequest pageRequest) {
+    public ResponseEntity<ApiResponse> getMeetings(PageRequest pageRequest) {
         Page<MeetingSummaryResult> results = meetingQueryService.getMeetings(
                 pageRequest.toPageable()
         );
 
-        return PageResponse.of(results, MeetingSummaryResponse::from);
+        return ApiResponse.ok(results, MeetingSummaryResponse::from);
     }
 
     // 모임 상세 조회
     @GetMapping("/{meetingId}")
-    public MeetingResponse getMeeting(@PathVariable UUID meetingId) {
+    public ResponseEntity<ApiResponse> getMeeting(@PathVariable UUID meetingId) {
         MeetingResult result = meetingQueryService.getMeeting(meetingId);
-        return MeetingResponse.from(result);
+        return ApiResponse.ok(MeetingResponse.from(result));
     }
 
     // 모임 가입 신청
     @AuthRequired
     @PostMapping("/{meetingId}/join")
-    public ResponseEntity<MeetingJoinResponse> joinMeeting(
+    public ResponseEntity<ApiResponse> joinMeeting(
             @PathVariable UUID meetingId,
             @CurrentUserId UUID currentUserId,
             @Valid @RequestBody JoinMeetingRequest req
@@ -106,14 +105,13 @@ public class MeetingController {
                 req.toCommand(meetingId, currentUserId)
         );
 
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(MeetingJoinResponse.from(result));
+        return ApiResponse.created(MeetingJoinResponse.from(result));
     }
 
     // 가입 신청 목록 조회
     @AuthRequired
     @GetMapping("/{meetingId}/join")
-    public PageResponse<MeetingJoinResponse> getMeetingJoinList(
+    public ResponseEntity<ApiResponse> getMeetingJoinList(
             @PathVariable UUID meetingId,
             @CurrentUserId UUID currentUserId,
             @RequestParam(required = false) MeetingJoinStatus joinStatus,
@@ -126,13 +124,13 @@ public class MeetingController {
                 pageRequest.toPageable(Sort.by(Sort.Direction.DESC, "createdAt"))
         );
 
-        return PageResponse.of(results, MeetingJoinResponse::from);
+        return ApiResponse.ok(results, MeetingJoinResponse::from);
     }
 
     // 모임 가입 승인
     @AuthRequired
     @PostMapping("/{meetingId}/join/{joinId}/approve")
-    public MeetingJoinResponse approveMeetingJoin(
+    public ResponseEntity<ApiResponse> approveMeetingJoin(
             @PathVariable UUID meetingId,
             @PathVariable UUID joinId,
             @CurrentUserId UUID currentUserId
@@ -143,13 +141,13 @@ public class MeetingController {
                 currentUserId
         );
 
-        return MeetingJoinResponse.from(result);
+        return ApiResponse.ok(MeetingJoinResponse.from(result));
     }
 
     // 모임 일정 생성
     @AuthRequired
     @PostMapping("/{meetingId}/schedules")
-    public ResponseEntity<MeetingScheduleResponse> createMeetingSchedule(
+    public ResponseEntity<ApiResponse> createMeetingSchedule(
             @PathVariable UUID meetingId,
             @CurrentUserId UUID currentUserId,
             @Valid @RequestBody CreateMeetingScheduleRequest req
@@ -164,14 +162,13 @@ public class MeetingController {
 
         MeetingScheduleResult result = meetingScheduleCommandService.createSchedule(command);
 
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(MeetingScheduleResponse.from(result));
+        return ApiResponse.created(MeetingScheduleResponse.from(result));
     }
 
     // 모임 일정 목록 조회
     @AuthRequired
     @GetMapping("/{meetingId}/schedules")
-    public PageResponse<MeetingScheduleResponse> getMeetingSchedules(
+    public ResponseEntity<ApiResponse> getMeetingSchedules(
             @PathVariable UUID meetingId,
             @CurrentUserId UUID currentUserId,
             PageRequest pageRequest
@@ -181,25 +178,25 @@ public class MeetingController {
                 pageRequest.toPageable(Sort.by(Sort.Direction.ASC, "scheduleNumber"))
         );
 
-        return PageResponse.of(results, MeetingScheduleResponse::from);
+        return ApiResponse.ok(results, MeetingScheduleResponse::from);
     }
 
     // 모임 일정 상세 조회
     @AuthRequired
     @GetMapping("/{meetingId}/schedules/{scheduleId}")
-    public MeetingScheduleResponse getMeetingSchedule(
+    public ResponseEntity<ApiResponse> getMeetingSchedule(
             @PathVariable UUID meetingId,
             @PathVariable UUID scheduleId,
             @CurrentUserId UUID currentUserId
     ) {
         MeetingScheduleResult result = meetingScheduleQueryService.getSchedule(meetingId, scheduleId);
-        return MeetingScheduleResponse.from(result);
+        return ApiResponse.ok(MeetingScheduleResponse.from(result));
     }
 
     // 모임 일정 참석 등록
     @AuthRequired
     @PostMapping("/{meetingId}/schedules/{scheduleId}/join")
-    public ResponseEntity<MeetingAttendanceResponse> joinMeetingSchedule(
+    public ResponseEntity<ApiResponse> joinMeetingSchedule(
             @PathVariable UUID meetingId,
             @PathVariable UUID scheduleId,
             @CurrentUserId UUID currentUserId
@@ -210,14 +207,13 @@ public class MeetingController {
                 currentUserId
         );
 
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(MeetingAttendanceResponse.from(result));
+        return ApiResponse.created(MeetingAttendanceResponse.from(result));
     }
 
     // 모임 일정 상태 변경
     @AuthRequired
     @PatchMapping("/{meetingId}/schedules/{scheduleId}/status")
-    public ResponseEntity<MeetingScheduleResponse> changeMeetingScheduleStatus(
+    public ResponseEntity<ApiResponse> changeMeetingScheduleStatus(
             @PathVariable UUID meetingId,
             @PathVariable UUID scheduleId,
             @CurrentUserId UUID currentUserId,
@@ -231,13 +227,13 @@ public class MeetingController {
 
         MeetingScheduleResult result = meetingScheduleCommandService.changeScheduleStatus(command);
 
-        return ResponseEntity.ok(MeetingScheduleResponse.from(result));
+        return ApiResponse.ok(MeetingScheduleResponse.from(result));
     }
 
     // 특정 일정 출석부 조회
     @AuthRequired
     @GetMapping("/{meetingId}/schedules/{scheduleId}/attendances")
-    public MeetingAttendancePageResponse getScheduleAttendances(
+    public ResponseEntity<ApiResponse> getScheduleAttendances(
             @PathVariable UUID meetingId,
             @PathVariable UUID scheduleId,
             @CurrentUserId UUID currentUserId,
@@ -256,13 +252,13 @@ public class MeetingController {
                 currentUserId
         );
 
-        return MeetingAttendancePageResponse.from(results, statistics);
+        return ApiResponse.ok(MeetingAttendancePageResponse.from(results, statistics));
     }
 
     // 내 출석부 조회
     @AuthRequired
     @GetMapping("/{meetingId}/attendances/me")
-    public MeetingAttendancePageResponse getMyAttendances(
+    public ResponseEntity<ApiResponse> getMyAttendances(
             @PathVariable UUID meetingId,
             @CurrentUserId UUID currentUserId,
             PageRequest pageRequest
@@ -278,13 +274,13 @@ public class MeetingController {
                 currentUserId
         );
 
-        return MeetingAttendancePageResponse.from(results, statistics);
+        return ApiResponse.ok(MeetingAttendancePageResponse.from(results, statistics));
     }
 
     // 출석 상태 변경
     @AuthRequired
     @PatchMapping("/{meetingId}/schedules/{scheduleId}/attendances")
-    public ResponseEntity<MeetingAttendanceResponse> changeAttendanceStatus(
+    public ResponseEntity<ApiResponse> changeAttendanceStatus(
             @PathVariable UUID meetingId,
             @PathVariable UUID scheduleId,
             @CurrentUserId UUID currentUserId,
@@ -298,6 +294,6 @@ public class MeetingController {
 
         MeetingAttendanceResult result = meetingAttendanceCommandService.changeAttendanceStatus(command);
 
-        return ResponseEntity.ok(MeetingAttendanceResponse.from(result));
+        return ApiResponse.ok(MeetingAttendanceResponse.from(result));
     }
 }
