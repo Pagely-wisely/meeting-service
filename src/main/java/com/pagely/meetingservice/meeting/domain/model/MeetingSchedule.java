@@ -153,6 +153,7 @@ public class MeetingSchedule extends BaseEntity {
 
     // 일정 진행 시작 처리
     public void start(UUID updatedBy) {
+        // 상태 전이 규칙은 기존 changeStatus()를 재사용한다.
         changeStatus(MeetingScheduleStatus.ONGOING, updatedBy);
     }
 }
