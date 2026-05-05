@@ -2,6 +2,7 @@ package com.pagely.meetingservice.meeting.infrastructure.persistence;
 
 import com.pagely.meetingservice.meeting.domain.model.MeetingSchedule;
 import com.pagely.meetingservice.meeting.domain.model.MeetingScheduleStatus;
+import jakarta.persistence.LockModeType;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -9,6 +10,7 @@ import java.util.UUID;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -46,4 +48,14 @@ public interface JpaMeetingScheduleRepository extends JpaRepository<MeetingSched
             @Param("now") LocalDateTime now,
             Pageable pageable
     );
+
+    // 일정 상태 변경 시 동시 변경을 막기 위한 쓰기 락 조회
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("""
+            SELECT s
+            FROM MeetingSchedule s
+            WHERE s.id = :scheduleId
+              AND s.deletedAt IS NULL
+            """)
+    Optional<MeetingSchedule> findByIdForUpdate(@Param("scheduleId") UUID scheduleId);
 }

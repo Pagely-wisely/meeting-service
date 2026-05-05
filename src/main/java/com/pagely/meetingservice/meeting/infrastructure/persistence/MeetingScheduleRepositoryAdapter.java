@@ -81,4 +81,10 @@ public class MeetingScheduleRepositoryAdapter implements MeetingScheduleReposito
     public List<MeetingSchedule> findStartDueSchedules(LocalDateTime now, Pageable pageable) {
         return jpaMeetingScheduleRepository.findStartDueSchedules(now, pageable);
     }
+
+    // ID로 일정 조회 - 쓰기 락
+    @Override
+    public Optional<MeetingSchedule> findByIdForUpdate(UUID scheduleId) {
+        return jpaMeetingScheduleRepository.findByIdForUpdate(scheduleId);
+    }
 }

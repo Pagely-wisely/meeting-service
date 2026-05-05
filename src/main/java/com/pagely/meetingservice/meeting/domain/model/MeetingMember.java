@@ -136,14 +136,27 @@ public class MeetingMember extends BaseEntity {
     }
 
     // 시스템 정책에 의한 자동 강퇴 처리
-    public void expelBySystem(UUID updatedBy){
-        if(this.status == MeetingMemberStatus.EXPELLED){ // 이미 강퇴된 경우 강퇴 불가
+    public void expelBySystem(UUID updatedBy) {
+        if (this.status == MeetingMemberStatus.EXPELLED) { // 이미 강퇴된 경우 강퇴 불가
             return;
         }
-        if(this.role == MeetingMemberRole.HOST){ // 모임장인 경우 강퇴 불가
+        if (this.role == MeetingMemberRole.HOST) { // 모임장인 경우 강퇴 불가
             return;
         }
-        this.status = MeetingMemberStatus.EXPELLED; 
+        this.status = MeetingMemberStatus.EXPELLED;
+        this.updatedBy = updatedBy;
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    // 독후감 미작성에 따른 경고 1회 누적
+    public void applyMissingReportWarning(UUID updatedBy) {
+        // 활성 모임원이 아니면 경고 누적 대상이 아님
+        if (!isActive()) {
+            return;
+        }
+
+        this.warningCount++;
+
         this.updatedBy = updatedBy;
         this.updatedAt = LocalDateTime.now();
     }
