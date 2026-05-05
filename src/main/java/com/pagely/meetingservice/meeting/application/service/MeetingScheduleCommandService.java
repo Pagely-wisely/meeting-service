@@ -6,6 +6,7 @@ import com.pagely.meetingservice.meeting.application.dto.command.UpdateScheduleS
 import com.pagely.meetingservice.meeting.application.dto.result.MeetingScheduleResult;
 import com.pagely.meetingservice.meeting.application.port.BookProvider;
 import com.pagely.meetingservice.meeting.application.port.EventPublisher;
+import com.pagely.meetingservice.meeting.domain.event.MeetingAttendanceStatusChangedEvent;
 import com.pagely.meetingservice.meeting.domain.event.MeetingScheduleCreatedEvent;
 import com.pagely.meetingservice.meeting.domain.event.MeetingScheduleStatusChangedEvent;
 import com.pagely.meetingservice.meeting.domain.exception.MeetingErrorCode;
@@ -109,7 +110,6 @@ public class MeetingScheduleCommandService {
         }
 
         // 이미 ONGOING인 일정을 다시 ONGOING으로 변경하는 것은 허용하지 않는다.
-        // 실제 동일 상태 차단은 MeetingSchedule.changeStatus()에서도 한 번 더 검증한다.
         if (schedule.getStatus() == MeetingScheduleStatus.ONGOING
                 && command.status() == MeetingScheduleStatus.ONGOING) {
             throw new BusinessException(MeetingScheduleErrorCode.INVALID_SCHEDULE_STATUS_CHANGE);
@@ -127,12 +127,16 @@ public class MeetingScheduleCommandService {
             throw new BusinessException(MeetingScheduleErrorCode.ONLY_HOST_CAN_CHANGE_SCHEDULE_STATUS);
         }
 
-        // FINISHED 상태로 변경하는 경우 출석 정보를 함께 확인하여 일정 종료 처리
+        // 일정 종료 시 자동 결석 처리된 참석자 목록
+        List<MeetingAttendance> autoAbsentAttendances = List.of();
+
         if (command.status() == MeetingScheduleStatus.FINISHED) {
+            // 해당 일정의 전체 출석부를 조회한다.
             List<MeetingAttendance> attendances =
                     meetingAttendanceRepository.findByScheduleId(command.scheduleId());
 
-            schedule.finish(attendances, command.updatedBy());
+            // 일정 종료 처리와 함께 PENDING 참석자를 ABSENT로 자동 변경한다.
+            autoAbsentAttendances = schedule.finish(attendances, command.updatedBy());
         } else {
             // SCHEDULED -> ONGOING
             // SCHEDULED -> CANCELLED
@@ -155,6 +159,17 @@ public class MeetingScheduleCommandService {
         // 일회성 모임의 일정이 종료되면 모임 상태도 COMPLETED로 함께 변경한다.
         if (meeting.isOneTime() && schedule.getStatus() == MeetingScheduleStatus.FINISHED) {
             meeting.finish(command.updatedBy());
+        }
+
+        // 일정 종료로 인해 자동 결석 처리된 출석에 대해 출석 상태 변경 이벤트를 발행한다.
+        // 이 이벤트를 Kafka Consumer가 수신하여 absentCount +1, warningCount +1을 반영한다.
+        for (MeetingAttendance attendance : autoAbsentAttendances) {
+            eventPublisher.publish(
+                    MeetingAttendanceStatusChangedEvent.of(
+                            attendance,
+                            command.updatedBy()
+                    )
+            );
         }
 
         // 일정 상태 변경 이벤트 발행
