@@ -23,4 +23,3 @@ public class MeetingInternalController {
         return ApiResponse.ok(meetingInternalQueryService.getReadableMeetings(userId));
     }
 }
-

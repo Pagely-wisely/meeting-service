@@ -242,8 +242,8 @@ public class Meeting extends BaseEntity {
             return;
         }
 
-        // 취소된 모임은 종료 처리하지 않는다.
-        if (this.meetingStatus == MeetingStatus.CANCELLED) {
+        // 진행 중 상태에서만 종료 가능
+        if (this.meetingStatus != MeetingStatus.IN_PROGRESS) {
             throw new BusinessException(MeetingErrorCode.INVALID_MEETING_STATUS);
         }
 

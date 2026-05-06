@@ -7,6 +7,7 @@ import com.pagely.meetingservice.meeting.domain.exception.MeetingAttendanceError
 import com.pagely.meetingservice.meeting.domain.exception.MeetingErrorCode;
 import com.pagely.meetingservice.meeting.domain.exception.MeetingMemberErrorCode;
 import com.pagely.meetingservice.meeting.domain.exception.MeetingScheduleErrorCode;
+import com.pagely.meetingservice.meeting.domain.model.MeetingAttendance;
 import com.pagely.meetingservice.meeting.domain.model.MeetingMember;
 import com.pagely.meetingservice.meeting.domain.model.MeetingSchedule;
 import com.pagely.meetingservice.meeting.domain.repository.MeetingAttendanceRepository;
@@ -41,9 +42,14 @@ public class MeetingAttendanceQueryService {
     ) {
         validateScheduleAttendanceViewPermission(meetingId, scheduleId, userId);
 
-        // 해당 일정에 등록된 출석 정보를 페이징 조회 후 결과 DTO로 변환
-        return meetingAttendanceRepository.findByScheduleId(scheduleId, pageable)
-                .map(MeetingAttendanceResult::from);
+        Page<MeetingAttendance> attendances =
+                meetingAttendanceRepository.findByScheduleId(scheduleId, pageable);
+
+        if (attendances.isEmpty()) {
+            throw new BusinessException(MeetingAttendanceErrorCode.ATTENDANCE_LIST_NOT_FOUND);
+        }
+
+        return attendances.map(MeetingAttendanceResult::from);
     }
 
     // 특정 일정의 출석 통계 조회

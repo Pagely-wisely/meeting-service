@@ -10,6 +10,7 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import lombok.Getter;
@@ -83,7 +84,6 @@ public class MeetingSchedule extends BaseEntity {
 
     // 모임 일정 상태 변경
     public void changeStatus(MeetingScheduleStatus newStatus, UUID updatedBy) {
-        // null 상태가 들어오면 잘못된 상태가 엔티티에 저장될 수 있으므로 즉시 차단
         if (newStatus == null) {
             throw new BusinessException(MeetingScheduleErrorCode.INVALID_SCHEDULE_STATUS_CHANGE);
         }
@@ -99,7 +99,7 @@ public class MeetingSchedule extends BaseEntity {
             throw new BusinessException(MeetingScheduleErrorCode.INVALID_SCHEDULE_STATUS_CHANGE);
         }
 
-        // SCHEDULED 상태에서는 ONGOING 또는 CANCELLED 로만 변경 가능
+        // SCHEDULED 상태에서는 ONGOING 또는 CANCELLED로만 변경 가능
         if (this.status == MeetingScheduleStatus.SCHEDULED) {
             if (newStatus != MeetingScheduleStatus.ONGOING
                     && newStatus != MeetingScheduleStatus.CANCELLED) {
@@ -107,7 +107,7 @@ public class MeetingSchedule extends BaseEntity {
             }
         }
 
-        // ONGOING 상태에서는 FINISHED 로만 변경 가능
+        // ONGOING 상태에서는 FINISHED로만 변경 가능
         if (this.status == MeetingScheduleStatus.ONGOING) {
             if (newStatus != MeetingScheduleStatus.FINISHED) {
                 throw new BusinessException(MeetingScheduleErrorCode.INVALID_SCHEDULE_STATUS_CHANGE);
@@ -120,15 +120,24 @@ public class MeetingSchedule extends BaseEntity {
     }
 
     // 모임 일정 종료 처리
-    public void finish(List<MeetingAttendance> attendances, UUID updatedBy) {
+    public List<MeetingAttendance> finish(List<MeetingAttendance> attendances, UUID updatedBy) {
         // 일정 상태를 FINISHED로 변경한다.
-        // 상태 전이 규칙은 changeStatus() 내부에서 검증한다.
         changeStatus(MeetingScheduleStatus.FINISHED, updatedBy);
 
-        // 일정 종료 시 출석 상태가 아직 PENDING인 참석자만 ABSENT로 확정한다.
+        // 일정 종료로 인해 실제 ABSENT 처리된 출석 목록
+        List<MeetingAttendance> changedAttendances = new ArrayList<>();
+
         for (MeetingAttendance attendance : attendances) {
-            attendance.markAbsentIfPending(updatedBy);
+            // PENDING인 참석자만 ABSENT로 변경된다.
+            boolean changed = attendance.markAbsentIfPending(updatedBy);
+
+            // 실제 상태가 변경된 출석만 이벤트 발행 대상으로 모은다.
+            if (changed) {
+                changedAttendances.add(attendance);
+            }
         }
+
+        return changedAttendances;
     }
 
     // 진행중인 일정인지 확인

@@ -121,14 +121,10 @@ public class MeetingAttendance extends BaseEntity {
     }
 
     // 일정 종료 시 자동 결석 처리
-    public void markAbsentIfPending(UUID updatedBy) {
-        // 일정 종료 시 자동 결석 처리 대상은 PENDING 상태뿐이다.
-        // 이미 출석 상태가 확정된 ATTENDED, LATE, EXCUSED, ABSENT는 절대 덮어쓰지 않는다.
-
-        // 일정 종료 시점까지 아무 출석 처리도 되지 않은 PENDING 참석자만
-        // 자동으로 ABSENT 상태로 확정한다.
+    public boolean markAbsentIfPending(UUID updatedBy) {
+        // 이미 출석/지각/결석/공결 등으로 확정된 사용자는 변경하지 않는다.
         if (this.status != AttendanceStatus.PENDING) {
-            return;
+            return false;
         }
 
         // PENDING 상태인 참석자를 일정 종료로 인해 자동 결석 처리한다.
@@ -137,6 +133,9 @@ public class MeetingAttendance extends BaseEntity {
         this.checkedAt = LocalDateTime.now();
         this.updatedBy = updatedBy;
         this.updatedAt = LocalDateTime.now();
+
+        // 실제로 ABSENT로 변경되었음을 서비스 계층에 알려준다.
+        return true;
     }
 
     public UUID getId() {

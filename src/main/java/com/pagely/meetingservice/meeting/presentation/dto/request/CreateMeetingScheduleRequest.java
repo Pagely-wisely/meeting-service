@@ -8,8 +8,6 @@ public record CreateMeetingScheduleRequest(
         String bookId,
 
         @NotNull
-        LocalDateTime startAt,
-
-        String discussionNote
+        LocalDateTime startAt
 ) {
 }

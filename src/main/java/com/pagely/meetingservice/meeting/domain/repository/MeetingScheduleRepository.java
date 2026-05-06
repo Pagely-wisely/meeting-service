@@ -38,4 +38,7 @@ public interface MeetingScheduleRepository {
 
     // 시작 시간이 지난 SCHEDULED 상태의 일정 목록 조회
     List<MeetingSchedule> findStartDueSchedules(LocalDateTime now, Pageable pageable);
+
+    // ID로 일정 조회 - 쓰기 락
+    Optional<MeetingSchedule> findByIdForUpdate(UUID scheduleId);
 }
