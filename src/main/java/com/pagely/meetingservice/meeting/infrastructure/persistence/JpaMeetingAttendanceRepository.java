@@ -2,6 +2,8 @@ package com.pagely.meetingservice.meeting.infrastructure.persistence;
 
 import com.pagely.meetingservice.meeting.domain.model.AttendanceStatus;
 import com.pagely.meetingservice.meeting.domain.model.MeetingAttendance;
+
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -42,4 +44,7 @@ public interface JpaMeetingAttendanceRepository extends JpaRepository<MeetingAtt
 
     // 특정 유저의 모든 참석 행 조회
     List<MeetingAttendance> findAllByUserIdAndDeletedAtIsNull(UUID userId);
+
+    // 지정한 모임 ID에 한정된 특정 유저의 참석 목록 조회
+    List<MeetingAttendance> findAllByUserIdAndMeetingIdInAndDeletedAtIsNull(UUID userId, Collection<UUID> meetingIds);
 }

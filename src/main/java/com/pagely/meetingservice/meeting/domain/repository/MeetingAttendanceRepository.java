@@ -2,6 +2,8 @@ package com.pagely.meetingservice.meeting.domain.repository;
 
 import com.pagely.meetingservice.meeting.domain.model.AttendanceStatus;
 import com.pagely.meetingservice.meeting.domain.model.MeetingAttendance;
+
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -40,4 +42,7 @@ public interface MeetingAttendanceRepository {
 
     // 특정 일정에 이미 출석 등록했는지 확인
     boolean existsByScheduleIdAndUserId(UUID scheduleId, UUID userId);
+
+    // 지정한 모임 ID에 한정된 특정 유저의 참석 목록 조회
+    List<MeetingAttendance> findAllByUserIdAndMeetingIdIn(UUID userId, Collection<UUID> meetingIds);
 }

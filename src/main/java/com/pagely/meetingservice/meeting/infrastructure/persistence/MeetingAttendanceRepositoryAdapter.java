@@ -3,6 +3,8 @@ package com.pagely.meetingservice.meeting.infrastructure.persistence;
 import com.pagely.meetingservice.meeting.domain.model.AttendanceStatus;
 import com.pagely.meetingservice.meeting.domain.model.MeetingAttendance;
 import com.pagely.meetingservice.meeting.domain.repository.MeetingAttendanceRepository;
+
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -99,5 +101,11 @@ public class MeetingAttendanceRepositoryAdapter implements MeetingAttendanceRepo
     @Override
     public List<MeetingAttendance> findAllByUserId(UUID userId) {
         return jpaMeetingAttendanceRepository.findAllByUserIdAndDeletedAtIsNull(userId);
+    }
+
+
+    @Override
+    public List<MeetingAttendance> findAllByUserIdAndMeetingIdIn(UUID userId, Collection<UUID> meetingIds) {
+        return jpaMeetingAttendanceRepository.findAllByUserIdAndMeetingIdInAndDeletedAtIsNull(userId, meetingIds);
     }
 }
