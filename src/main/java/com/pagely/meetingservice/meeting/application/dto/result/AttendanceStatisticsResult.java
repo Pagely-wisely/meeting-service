@@ -51,4 +51,25 @@ public record AttendanceStatisticsResult(
                 .filter(attendance -> attendance.status() == status)
                 .count();
     }
+
+    public static AttendanceStatisticsResult fromStatusCounts(
+        long attendedCount,
+        long lateCount,
+        long absentCount,
+        long excusedCount
+    ){
+        long convertedAbsentCount = lateCount / 3;
+        long remainingLateCount = lateCount % 3;
+        long totalAbsentCount = absentCount + convertedAbsentCount;
+
+        return new AttendanceStatisticsResult(
+                attendedCount,
+                lateCount,
+                absentCount,
+                excusedCount,
+                convertedAbsentCount,
+                remainingLateCount,
+                totalAbsentCount
+        );
+    }
 }

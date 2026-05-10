@@ -5,6 +5,7 @@ import com.pagely.meetingservice.meeting.domain.model.MeetingAttendance;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.domain.Page;
@@ -45,4 +46,10 @@ public interface MeetingAttendanceRepository {
 
     // 지정한 모임 ID에 한정된 특정 유저의 참석 목록 조회
     List<MeetingAttendance> findAllByUserIdAndMeetingIdIn(UUID userId, Collection<UUID> meetingIds);
+
+    // 일정 단위 출석 행을 상태 별로 집계
+    Map<AttendanceStatus, Long> countByScheduleIdGroupedByStatus(UUID scheduleId);
+
+    // 모임 +유저 단위 출석 행을 상태 별로 집계
+    Map<AttendanceStatus, Long> countByMeetingIdAndUserIdGroupedByStatus(UUID meetingId, UUID userId);
 }

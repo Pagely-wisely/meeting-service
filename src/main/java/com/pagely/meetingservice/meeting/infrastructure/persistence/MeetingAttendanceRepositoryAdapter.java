@@ -5,7 +5,9 @@ import com.pagely.meetingservice.meeting.domain.model.MeetingAttendance;
 import com.pagely.meetingservice.meeting.domain.repository.MeetingAttendanceRepository;
 
 import java.util.Collection;
+import java.util.EnumMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -19,6 +21,16 @@ import org.springframework.stereotype.Repository;
 public class MeetingAttendanceRepositoryAdapter implements MeetingAttendanceRepository {
 
     private final JpaMeetingAttendanceRepository jpaMeetingAttendanceRepository;
+
+    private Map<AttendanceStatus, Long> toStatusCountMap(List<Object[]> rows) {
+        Map<AttendanceStatus, Long> map = new EnumMap<>(AttendanceStatus.class);
+        for (Object[] row : rows) {
+            AttendanceStatus status = (AttendanceStatus) row[0];
+            Long count = (Long) row[1];
+            map.put(status, count);
+        }
+        return map;
+    }
 
     // 출석 저장
     @Override
@@ -103,9 +115,23 @@ public class MeetingAttendanceRepositoryAdapter implements MeetingAttendanceRepo
         return jpaMeetingAttendanceRepository.findAllByUserIdAndDeletedAtIsNull(userId);
     }
 
-
+    // 지정한 모임 ID에 한정된 특정 유저의 참석 목록 조회
     @Override
     public List<MeetingAttendance> findAllByUserIdAndMeetingIdIn(UUID userId, Collection<UUID> meetingIds) {
         return jpaMeetingAttendanceRepository.findAllByUserIdAndMeetingIdInAndDeletedAtIsNull(userId, meetingIds);
     }
+
+    // 일정 단위 출석 행을 상태 별로 집계
+    @Override
+    public Map<AttendanceStatus, Long> countByScheduleIdGroupedByStatus(UUID scheduleId) {
+        return toStatusCountMap(jpaMeetingAttendanceRepository.countGroupedByStatusForSchedule(scheduleId));
+    }
+
+    // 모임 +유저 단위 출석 행을 상태 별로 집계
+    @Override
+    public Map<AttendanceStatus, Long> countByMeetingIdAndUserIdGroupedByStatus(UUID meetingId, UUID userId) {
+        return toStatusCountMap(
+                jpaMeetingAttendanceRepository.countGroupedByStatusForMeetingAndUser(meetingId, userId));
+    }
+
 }

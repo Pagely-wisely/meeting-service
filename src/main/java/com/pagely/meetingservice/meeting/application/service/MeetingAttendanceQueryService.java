@@ -7,6 +7,7 @@ import com.pagely.meetingservice.meeting.domain.exception.MeetingAttendanceError
 import com.pagely.meetingservice.meeting.domain.exception.MeetingErrorCode;
 import com.pagely.meetingservice.meeting.domain.exception.MeetingMemberErrorCode;
 import com.pagely.meetingservice.meeting.domain.exception.MeetingScheduleErrorCode;
+import com.pagely.meetingservice.meeting.domain.model.AttendanceStatus;
 import com.pagely.meetingservice.meeting.domain.model.MeetingAttendance;
 import com.pagely.meetingservice.meeting.domain.model.MeetingMember;
 import com.pagely.meetingservice.meeting.domain.model.MeetingSchedule;
@@ -15,6 +16,7 @@ import com.pagely.meetingservice.meeting.domain.repository.MeetingMemberReposito
 import com.pagely.meetingservice.meeting.domain.repository.MeetingRepository;
 import com.pagely.meetingservice.meeting.domain.repository.MeetingScheduleRepository;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -62,13 +64,16 @@ public class MeetingAttendanceQueryService {
         // 출석부 조회 권한과 동일한 권한 정책을 적용한다.
         validateScheduleAttendanceViewPermission(meetingId, scheduleId, userId);
 
-        // 통계는 페이징된 데이터가 아니라 전체 출석 기록 기준으로 계산한다.
-        List<MeetingAttendanceResult> attendances = meetingAttendanceRepository.findByScheduleId(scheduleId)
-                .stream()
-                .map(MeetingAttendanceResult::from)
-                .toList();
+        // DB에서 상태별 건수 집계
+        Map<AttendanceStatus, Long> counts =
+                meetingAttendanceRepository.countByScheduleIdGroupedByStatus(scheduleId);
 
-        return AttendanceStatisticsResult.from(attendances);
+        long attended = counts.getOrDefault(AttendanceStatus.ATTENDED, 0L);
+        long late = counts.getOrDefault(AttendanceStatus.LATE, 0L);
+        long absent = counts.getOrDefault(AttendanceStatus.ABSENT, 0L);
+        long excused = counts.getOrDefault(AttendanceStatus.EXCUSED, 0L);
+
+        return AttendanceStatisticsResult.fromStatusCounts(attended, late, absent, excused);
     }
 
     // 내 출석부 조회 - 페이징 처리
@@ -88,16 +93,16 @@ public class MeetingAttendanceQueryService {
     public AttendanceStatisticsResult getMyAttendanceStatistics(UUID meetingId, UUID userId) {
         validateMyAttendanceViewPermission(meetingId, userId);
 
-        // 통계는 페이징된 데이터가 아니라 전체 출석 이력 기준으로 계산한다.
-        List<MeetingAttendanceResult> attendances = meetingAttendanceRepository.findByMeetingIdAndUserId(
-                        meetingId,
-                        userId
-                )
-                .stream()
-                .map(MeetingAttendanceResult::from)
-                .toList();
+        // DB에서 해당 모임/유저 출석을 상태별로 집계
+        Map<AttendanceStatus, Long> counts =
+                meetingAttendanceRepository.countByMeetingIdAndUserIdGroupedByStatus(meetingId, userId);
 
-        return AttendanceStatisticsResult.from(attendances);
+        long attended = counts.getOrDefault(AttendanceStatus.ATTENDED, 0L);
+        long late = counts.getOrDefault(AttendanceStatus.LATE, 0L);
+        long absent = counts.getOrDefault(AttendanceStatus.ABSENT, 0L);
+        long excused = counts.getOrDefault(AttendanceStatus.EXCUSED, 0L);
+
+        return AttendanceStatisticsResult.fromStatusCounts(attended, late, absent, excused);
     }
 
     // 특정 일정 출석부 조회 권한 검증
