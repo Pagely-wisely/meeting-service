@@ -5,6 +5,7 @@ import com.pagely.meetingservice.meeting.application.dto.command.CreateMeetingCo
 import com.pagely.meetingservice.meeting.application.dto.result.MeetingResult;
 import com.pagely.meetingservice.meeting.application.port.BookProvider;
 import com.pagely.meetingservice.meeting.application.port.EventPublisher;
+import com.pagely.meetingservice.meeting.application.port.ScheduleJobManager;
 import com.pagely.meetingservice.meeting.domain.event.MeetingCreatedEvent;
 import com.pagely.meetingservice.meeting.domain.event.MeetingScheduleCreatedEvent;
 import com.pagely.meetingservice.meeting.domain.exception.MeetingErrorCode;
@@ -23,6 +24,8 @@ import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 // 모임 명령 서비스
 @Service
@@ -37,6 +40,7 @@ public class MeetingCommandService {
     private final MeetingScheduleRepository meetingScheduleRepository;
     private final EventPublisher eventPublisher;
     private final BookProvider bookProvider;
+    private final ScheduleJobManager scheduleJobManager;
 
     // 모임 생성
     @Transactional
@@ -44,24 +48,16 @@ public class MeetingCommandService {
         UUID meetingId = UUID.randomUUID();
         LocalDateTime now = LocalDateTime.now();
 
-        // 일회성 모임 생성에 필요한 값들을 먼저 검증한다.
-        // 일회성 모임은 생성과 동시에 일정이 자동 생성되므로 bookId와 scheduleStartAt이 필수다.
         validateOneTimeMeeting(command);
 
-        // 일회성 모임 한정, 생성 전에 bookId 유효성을 Book Service 내부 API로 검증한다.
-        // 정기 모임은 모임 자체에 도서를 필수로 연결하지 않으므로 검증하지 않는다.
         if (command.meetingType() == MeetingType.ONES) {
             bookProvider.validateBook(command.bookId());
         }
 
-        // 모임 엔티티 생성
-        // 정기 모임에서 bookId가 비어 있으면 CreateMeetingCommand 내부에서 기본값("-")으로 보정한다.
         Meeting meeting = command.toMeeting(meetingId, now);
 
-        // 모임 저장
         Meeting saved = meetingRepository.save(meeting);
 
-        // 모임 생성자는 자동으로 모임장 멤버로 등록한다.
         MeetingMember hostMember = MeetingMember.create(
                 UUID.randomUUID(),
                 saved.getId(),
@@ -72,18 +68,20 @@ public class MeetingCommandService {
                 saved.getHostId()
         );
 
-        // 모임장 멤버 저장
         meetingMemberRepository.save(hostMember);
 
-        // 일회성 모임이면 1회차 일정을 자동 생성한다.
         if (saved.isOneTime()) {
             MeetingSchedule savedSchedule = createOneTimeSchedule(saved, command, now);
 
-            // 자동 생성된 일정 이벤트 발행
+            // 트랜잭션 커밋 이후 일회성 모임의 자동 시작 Job을 등록한다.
+            registerAfterCommit(() -> scheduleJobManager.scheduleStartJob(
+                    savedSchedule.getId(),
+                    savedSchedule.getStartAt()
+            ));
+
             eventPublisher.publish(MeetingScheduleCreatedEvent.of(savedSchedule));
         }
 
-        // 모임 생성 이벤트 발행
         eventPublisher.publish(MeetingCreatedEvent.of(saved));
 
         return MeetingResult.from(saved);
@@ -95,12 +93,10 @@ public class MeetingCommandService {
             return;
         }
 
-        // 일회성 모임은 자동 생성되는 일정에도 도서가 들어가므로 bookId가 필수다.
         if (command.bookId() == null || command.bookId().isBlank()) {
             throw new BusinessException(MeetingErrorCode.INVALID_BOOK);
         }
 
-        // 일회성 모임은 생성과 동시에 일정이 만들어지므로 일정 시작 시각이 필수다.
         if (command.scheduleStartAt() == null) {
             throw new BusinessException(MeetingScheduleErrorCode.INVALID_SCHEDULE_START_AT);
         }
@@ -124,5 +120,20 @@ public class MeetingCommandService {
         );
 
         return meetingScheduleRepository.save(schedule);
+    }
+
+    // 트랜잭션 커밋 이후 작업을 실행한다.
+    private void registerAfterCommit(Runnable task) {
+        if (!TransactionSynchronizationManager.isActualTransactionActive()) {
+            task.run();
+            return;
+        }
+
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                task.run();
+            }
+        });
     }
 }
