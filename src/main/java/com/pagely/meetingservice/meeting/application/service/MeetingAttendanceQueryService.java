@@ -15,6 +15,7 @@ import com.pagely.meetingservice.meeting.domain.repository.MeetingMemberReposito
 import com.pagely.meetingservice.meeting.domain.repository.MeetingRepository;
 import com.pagely.meetingservice.meeting.domain.repository.MeetingScheduleRepository;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -105,14 +106,19 @@ public class MeetingAttendanceQueryService {
             UUID scheduleId,
             UUID userId
     ) {
-        meetingRepository.findById(meetingId)
-                .orElseThrow(() -> new BusinessException(MeetingErrorCode.MEETING_NOT_FOUND));
+        if (!meetingRepository.existsById(meetingId)) {
+            throw new BusinessException(MeetingErrorCode.MEETING_NOT_FOUND);
+        }
 
-        MeetingSchedule schedule = meetingScheduleRepository.findById(scheduleId)
-                .orElseThrow(() -> new BusinessException(MeetingScheduleErrorCode.MEETING_SCHEDULE_NOT_FOUND));
+        Optional<MeetingSchedule> schedule = meetingScheduleRepository.findByIdAndMeetingIdAndDeletedAtIsNull(
+                scheduleId, meetingId);
 
-        if (!schedule.getMeetingId().equals(meetingId)) {
-            throw new BusinessException(MeetingScheduleErrorCode.SCHEDULE_NOT_FOR_MEETING);
+        if (schedule.isEmpty()) {
+            if (meetingScheduleRepository.findById(scheduleId).isPresent()) {
+                throw new BusinessException(MeetingScheduleErrorCode.SCHEDULE_NOT_FOR_MEETING);
+            }
+
+            throw new BusinessException(MeetingScheduleErrorCode.MEETING_SCHEDULE_NOT_FOUND);
         }
 
         MeetingMember member = meetingMemberRepository.findByMeetingIdAndUserId(meetingId, userId)
@@ -125,8 +131,10 @@ public class MeetingAttendanceQueryService {
 
     // 내 출석부 조회 권한 검증
     private void validateMyAttendanceViewPermission(UUID meetingId, UUID userId) {
-        meetingRepository.findById(meetingId)
-                .orElseThrow(() -> new BusinessException(MeetingErrorCode.MEETING_NOT_FOUND));
+
+        if (!meetingRepository.existsById(meetingId)) {
+            throw new BusinessException(MeetingErrorCode.MEETING_NOT_FOUND);
+        }
 
         boolean isMember = meetingMemberRepository.existsByMeetingIdAndUserId(meetingId, userId);
         if (!isMember) {
