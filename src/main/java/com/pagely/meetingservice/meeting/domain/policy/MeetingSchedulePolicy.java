@@ -9,7 +9,7 @@ import com.pagely.meetingservice.meeting.domain.model.MeetingMember;
 import com.pagely.meetingservice.meeting.domain.model.MeetingSchedule;
 import com.pagely.meetingservice.meeting.domain.model.MeetingScheduleStatus;
 
-public class MeetingSchedulePolicy {
+public final class MeetingSchedulePolicy {
     private MeetingSchedulePolicy() {
     }
 

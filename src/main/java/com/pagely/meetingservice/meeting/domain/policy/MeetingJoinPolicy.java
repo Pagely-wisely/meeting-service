@@ -13,7 +13,7 @@ import com.pagely.meetingservice.meeting.domain.model.MeetingMemberStatus;
 import com.pagely.meetingservice.meeting.domain.model.MeetingStatus;
 import com.pagely.meetingservice.meeting.domain.model.RecruitStatus;
 
-public class MeetingJoinPolicy {
+public final class MeetingJoinPolicy {
     
     private MeetingJoinPolicy(){}
 
