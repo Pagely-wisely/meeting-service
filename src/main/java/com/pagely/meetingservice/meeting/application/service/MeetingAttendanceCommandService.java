@@ -14,6 +14,7 @@ import com.pagely.meetingservice.meeting.domain.model.AttendanceStatus;
 import com.pagely.meetingservice.meeting.domain.model.MeetingAttendance;
 import com.pagely.meetingservice.meeting.domain.model.MeetingMember;
 import com.pagely.meetingservice.meeting.domain.model.MeetingSchedule;
+import com.pagely.meetingservice.meeting.domain.policy.MeetingAttendancePolicy;
 import com.pagely.meetingservice.meeting.domain.repository.MeetingAttendanceRepository;
 import com.pagely.meetingservice.meeting.domain.repository.MeetingMemberRepository;
 import com.pagely.meetingservice.meeting.domain.repository.MeetingRepository;
@@ -49,24 +50,18 @@ public class MeetingAttendanceCommandService {
 
         // 일정이 요청한 모임에 속한 일정인지 검증
         // 다른 모임의 scheduleId로 접근하는 것을 방지
-        if (!schedule.getMeetingId().equals(meetingId)) {
-            throw new BusinessException(MeetingScheduleErrorCode.SCHEDULE_NOT_FOR_MEETING);
-        }
+        MeetingAttendancePolicy.validateScheduleBelongsToMeeting(schedule, meetingId);
 
         // 일정 참석은 해당 모임에 가입된 사용자만 가능
         MeetingMember member = meetingMemberRepository.findByMeetingIdAndUserId(meetingId, userId)
                 .orElseThrow(() -> new BusinessException(MeetingAttendanceErrorCode.ONLY_MEMBER_CAN_JOIN_SCHEDULE));
 
         // 탈퇴/강퇴/비활성 상태의 모임원은 일정 참석 불가
-        if (!member.isActive()) {
-            throw new BusinessException(MeetingAttendanceErrorCode.ONLY_ACTIVE_MEMBER_CAN_JOIN_SCHEDULE);
-        }
+        MeetingAttendancePolicy.validateActiveMemberForScheduleJoin(member);
 
         // 동일 사용자가 같은 일정에 중복 참석 등록하는 것을 방지
         boolean alreadyJoined = meetingAttendanceRepository.existsByScheduleIdAndUserId(scheduleId, userId);
-        if (alreadyJoined) {
-            throw new BusinessException(MeetingAttendanceErrorCode.ATTENDANCE_ALREADY_EXISTS);
-        }
+        MeetingAttendancePolicy.validateNoDuplicateAttendance(alreadyJoined);
 
         LocalDateTime now = LocalDateTime.now();
 
@@ -107,14 +102,10 @@ public class MeetingAttendanceCommandService {
                 .orElseThrow(() -> new BusinessException(MeetingScheduleErrorCode.MEETING_SCHEDULE_NOT_FOUND));
 
         // 일정이 해당 모임에 속해 있는지 검증
-        if (!schedule.getMeetingId().equals(command.meetingId())) {
-            throw new BusinessException(MeetingScheduleErrorCode.SCHEDULE_NOT_FOR_MEETING);
-        }
+        MeetingAttendancePolicy.validateScheduleBelongsToMeeting(schedule, command.meetingId());
 
         // 출석 상태 변경은 진행 중인 일정에서만 가능
-        if (!schedule.isOngoing()) {
-            throw new BusinessException(MeetingAttendanceErrorCode.ONLY_ONGOING_SCHEDULE_CAN_CHANGE_ATTENDANCE);
-        }
+        MeetingAttendancePolicy.validateAlreadyOngoing(schedule);
 
         // 출석 상태를 변경하려는 사용자가 해당 모임의 멤버인지 확인
         MeetingMember updater = meetingMemberRepository.findByMeetingIdAndUserId(
@@ -124,9 +115,7 @@ public class MeetingAttendanceCommandService {
                 .orElseThrow(() -> new BusinessException(MeetingMemberErrorCode.ONLY_MEETING_MEMBER_ALLOWED));
 
         // 출석 상태 변경은 ACTIVE 상태의 모임장만 가능
-        if (!updater.isActive() || !updater.isHost()) {
-            throw new BusinessException(MeetingAttendanceErrorCode.ONLY_HOST_CAN_CHANGE_ATTENDANCE);
-        }
+        MeetingAttendancePolicy.validateHostChangesAttendance(updater);
 
         // 출석 상태 변경 대상자가 해당 모임의 멤버인지 확인
         MeetingMember targetMember = meetingMemberRepository.findByMeetingIdAndUserId(
@@ -137,9 +126,7 @@ public class MeetingAttendanceCommandService {
                         () -> new BusinessException(MeetingAttendanceErrorCode.ATTENDANCE_USER_NOT_MEETING_MEMBER));
 
         // 탈퇴/강퇴/비활성 상태의 모임원은 출석 상태 변경 대상이 될 수 없음
-        if (!targetMember.isActive()) {
-            throw new BusinessException(MeetingAttendanceErrorCode.ONLY_ACTIVE_MEMBER_CAN_CHANGE_ATTENDANCE);
-        }
+        MeetingAttendancePolicy.validateAttendanceTargetIsActive(targetMember);
 
         // 변경할 출석 정보 조회
         MeetingAttendance attendance = meetingAttendanceRepository.findByScheduleIdAndUserId(
