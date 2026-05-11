@@ -66,11 +66,17 @@ public class KafkaProducerConfig {
     public ProducerFactory<String, String> stringProducerFactory(KafkaProperties kafkaProperties) {
         Map<String, Object> props = kafkaProperties.buildProducerProperties();
 
-        return new DefaultKafkaProducerFactory<>(
-                props,
-                new StringSerializer(),
-                new StringSerializer()
-        );
+        DefaultKafkaProducerFactory<String, String> factory =
+                new DefaultKafkaProducerFactory<>(
+                        props,
+                        new StringSerializer(),
+                        new StringSerializer()
+                );
+
+        // StringSerializer를 코드로 직접 설정했으므로 yml 기반 serializer 재설정을 막는다.
+        factory.setConfigureSerializers(false);
+
+        return factory;
     }
 
     /**

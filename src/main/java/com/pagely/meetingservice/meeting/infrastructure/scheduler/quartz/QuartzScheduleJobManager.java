@@ -22,10 +22,8 @@ public class QuartzScheduleJobManager implements ScheduleJobManager {
     @Override
     public void scheduleStartJob(UUID scheduleId, LocalDateTime startAt) {
         try {
-            // 기존 Job이 있으면 삭제 후 다시 등록한다.
-            if (scheduler.checkExists(QuartzJobKeyGenerator.startJobKey(scheduleId))) {
-                scheduler.deleteJob(QuartzJobKeyGenerator.startJobKey(scheduleId));
-            }
+            // 기존 Job이 있으면 삭제하고 다시 등록한다. deleteJob은 없어도 안전하게 동작한다.
+            scheduler.deleteJob(QuartzJobKeyGenerator.startJobKey(scheduleId));
 
             JobDataMap jobDataMap = new JobDataMap();
             jobDataMap.put(MeetingScheduleStartJob.SCHEDULE_ID, scheduleId.toString());
@@ -36,7 +34,7 @@ public class QuartzScheduleJobManager implements ScheduleJobManager {
                     .build();
 
             Date startDate = Date.from(
-                    startAt.atZone(ZoneId.systemDefault()).toInstant()
+                    startAt.atZone(ZoneId.of("Asia/Seoul")).toInstant()
             );
 
             var trigger = TriggerBuilder.newTrigger()
