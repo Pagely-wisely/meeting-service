@@ -40,7 +40,11 @@ public class MeetingInternalQueryService {
         );
         meetingIds.sort(Comparator.naturalOrder());
 
-        List<MeetingAttendance> attendances = meetingAttendanceRepository.findAllByUserId(userId);
+        if (meetingIds.isEmpty()) {
+            return InternalReadableMeetingsResponse.of(List.of());
+        }
+
+        List<MeetingAttendance> attendances = meetingAttendanceRepository.findAllByUserIdAndMeetingIdIn(userId, meetingIds);
         Map<UUID, List<UUID>> scheduleIdsByMeeting = new LinkedHashMap<>();
         for (MeetingAttendance attendance : attendances) {
             UUID meetingId = attendance.getMeetingId();
