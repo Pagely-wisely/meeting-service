@@ -1,0 +1,9 @@
+global:
+  scrape_interval: 5s
+
+scrape_configs:
+  - job_name: 'meetingservice'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      # meeting-service를 IntelliJ/로컬에서 실행하는 경우
+      - targets: [ 'host.docker.internal:19011' ]
