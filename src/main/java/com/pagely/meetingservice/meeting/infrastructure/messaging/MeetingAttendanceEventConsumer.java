@@ -9,7 +9,7 @@ import com.pagely.meetingservice.meeting.domain.model.AttendanceStatus;
 import com.pagely.meetingservice.meeting.domain.model.MeetingMember;
 import com.pagely.meetingservice.meeting.domain.model.ProcessedEvent;
 import com.pagely.meetingservice.meeting.domain.repository.MeetingMemberRepository;
-import com.pagely.meetingservice.meeting.infrastructure.persistence.JpaProcessedEventRepository;
+import com.pagely.meetingservice.meeting.domain.repository.ProcessedEventRepository;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -28,8 +28,9 @@ public class MeetingAttendanceEventConsumer {
     private static final String CONSUMER_NAME = "meeting-attendance-event-consumer";
 
     private final MeetingMemberRepository meetingMemberRepository;
-    private final JpaProcessedEventRepository processedEventRepository;
+    private final ProcessedEventRepository processedEventRepository;
     private final WarningThresholdService warningThresholdService;
+
     @Qualifier("kafkaConsumerObjectMapper")
     private final ObjectMapper objectMapper;
 
@@ -50,6 +51,16 @@ public class MeetingAttendanceEventConsumer {
 
             // 멱등성 기준은 BaseEvent의 eventId를 사용한다.
             eventId = requiredText(root, "eventId");
+
+            // 이미 처리 완료된 이벤트면 중복 처리하지 않는다.
+            if (isAlreadyProcessed(eventId)) {
+                log.info(
+                        "이미 처리된 출석 이벤트 skip: consumerName={}, eventId={}",
+                        CONSUMER_NAME,
+                        eventId
+                );
+                return;
+            }
 
             // BaseEvent 내부 payload 필드 추출
             JsonNode payload = root.get("payload");
@@ -72,19 +83,6 @@ public class MeetingAttendanceEventConsumer {
                     status
             );
 
-            // 이벤트 처리 전 processed_event를 먼저 저장한다.
-            // 저장 성공한 Consumer만 이후 패널티 누적을 수행한다.
-            boolean acquired = trySaveProcessedEvent(eventId, attendanceId);
-            if (!acquired) {
-                log.info(
-                        "이미 처리 중이거나 처리 완료된 출석 이벤트 skip: consumerName={}, eventId={}, attendanceId={}",
-                        CONSUMER_NAME,
-                        eventId,
-                        attendanceId
-                );
-                return;
-            }
-
             // 이벤트 payload의 meetingId, userId 기준으로 모임원을 조회한다.
             MeetingMember member = meetingMemberRepository.findByMeetingIdAndUserId(
                             meetingId,
@@ -102,6 +100,9 @@ public class MeetingAttendanceEventConsumer {
                         userId,
                         member.getStatus()
                 );
+
+                // 재처리해도 결과가 같으므로 처리 완료로 기록한다.
+                saveProcessedEvent(eventId);
                 return;
             }
 
@@ -124,6 +125,9 @@ public class MeetingAttendanceEventConsumer {
             // 누적 반영 후 경고 횟수로 강퇴 여부만 처리
             warningThresholdService.handleAttendanceStatusChanged(eventId, meetingId, userId);
 
+            // 비즈니스 처리가 성공한 뒤 처리 완료 이벤트를 저장한다.
+            saveProcessedEvent(eventId);
+
             // 패널티 적용 후 카운트 확인
             log.info(
                     "출석 패널티 적용 후: eventId={}, attendanceId={}, lateCount={}, absentCount={}, warningCount={}, memberStatus={}",
@@ -133,6 +137,15 @@ public class MeetingAttendanceEventConsumer {
                     member.getAbsentCount(),
                     member.getWarningCount(),
                     member.getStatus()
+            );
+
+        } catch (DataIntegrityViolationException e) {
+            // 동시에 같은 이벤트가 처리되어 unique 제약이 발생한 경우 중복 수신으로 보고 skip한다.
+            log.info(
+                    "이미 처리된 출석 이벤트로 판단하여 skip: consumerName={}, eventId={}, attendanceId={}",
+                    CONSUMER_NAME,
+                    eventId,
+                    attendanceId
             );
 
         } catch (BusinessException | IllegalArgumentException e) {
@@ -159,28 +172,16 @@ public class MeetingAttendanceEventConsumer {
         }
     }
 
-    // 이벤트 처리 선점 저장
-    // consumer_name + event_id 유니크 제약을 이용해 중복 이벤트 처리를 방지한다.
-    private boolean trySaveProcessedEvent(String eventId, UUID attendanceId) {
-        try {
-            processedEventRepository.saveAndFlush(
-                    ProcessedEvent.of(CONSUMER_NAME, eventId)
-            );
+    // 이미 처리한 이벤트인지 확인한다.
+    private boolean isAlreadyProcessed(String eventId) {
+        return processedEventRepository.existsByConsumerNameAndEventId(CONSUMER_NAME, eventId);
+    }
 
-            log.info(
-                    "출석 이벤트 처리 선점 성공: consumerName={}, eventId={}, attendanceId={}",
-                    CONSUMER_NAME,
-                    eventId,
-                    attendanceId
-            );
-
-            return true;
-
-        } catch (DataIntegrityViolationException e) {
-            // 동일 consumerName + eventId가 이미 저장된 경우
-            // 같은 이벤트가 이미 처리 중이거나 처리 완료된 것으로 보고 skip한다.
-            return false;
-        }
+    // 처리 성공 후 이벤트 처리 이력을 저장한다.
+    private void saveProcessedEvent(String eventId) {
+        processedEventRepository.save(
+                ProcessedEvent.of(CONSUMER_NAME, eventId)
+        );
     }
 
     // 필수 문자열 필드 추출
