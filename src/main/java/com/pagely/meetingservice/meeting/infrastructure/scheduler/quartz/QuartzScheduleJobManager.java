@@ -17,6 +17,8 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class QuartzScheduleJobManager implements ScheduleJobManager {
 
+    private static final ZoneId SERVICE_ZONE_ID = ZoneId.of("Asia/Seoul");
+
     private final Scheduler scheduler;
 
     @Override
@@ -34,7 +36,7 @@ public class QuartzScheduleJobManager implements ScheduleJobManager {
                     .build();
 
             Date startDate = Date.from(
-                    startAt.atZone(ZoneId.of("Asia/Seoul")).toInstant()
+                    startAt.atZone(SERVICE_ZONE_ID).toInstant()
             );
 
             var trigger = TriggerBuilder.newTrigger()
@@ -53,7 +55,7 @@ public class QuartzScheduleJobManager implements ScheduleJobManager {
     @Override
     public void deleteStartJob(UUID scheduleId) {
         try {
-            // 취소된 일정의 자동 시작 Job을 제거한다.
+            // 취소/종료된 일정의 자동 시작 Job을 제거한다.
             scheduler.deleteJob(QuartzJobKeyGenerator.startJobKey(scheduleId));
         } catch (Exception e) {
             throw new IllegalStateException("일정 자동 시작 Job 삭제에 실패했습니다.", e);

@@ -150,6 +150,16 @@ public class MeetingScheduleCommandService {
             registerAfterCommit(() -> scheduleJobManager.deleteStartJob(schedule.getId()));
         }
 
+        if (schedule.getStatus() == MeetingScheduleStatus.CANCELLED) {
+            // 취소된 일정은 자동 시작되지 않도록 Job을 삭제한다.
+            registerAfterCommit(() -> scheduleJobManager.deleteStartJob(schedule.getId()));
+        }
+
+        if (schedule.getStatus() == MeetingScheduleStatus.FINISHED) {
+            // 시작 전에 종료된 일정의 잔여 자동 시작 Job을 제거한다.
+            registerAfterCommit(() -> scheduleJobManager.deleteStartJob(schedule.getId()));
+        }
+
         if (schedule.getStatus() == MeetingScheduleStatus.FINISHED) {
             // 시작 전에 종료된 일정의 잔여 자동 시작 Job을 제거한다.
             registerAfterCommit(() -> scheduleJobManager.deleteStartJob(schedule.getId()));

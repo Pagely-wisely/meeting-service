@@ -1,6 +1,8 @@
 package com.pagely.meetingservice.meeting.infrastructure.messaging.outbox;
 
 import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
@@ -18,8 +20,13 @@ public class OutboxRepositoryAdapter implements OutboxRepository {
     }
 
     @Override
-    public List<OutboxEvent> findUnpublished(Pageable pageable) {
-        return jpaOutboxRepository.findUnpublished(pageable);
+    public Optional<OutboxEvent> findById(UUID id) {
+        return jpaOutboxRepository.findById(id);
+    }
+
+    @Override
+    public List<OutboxEvent> findPublishCandidates(Pageable pageable) {
+        return jpaOutboxRepository.findPublishCandidates(pageable);
     }
 
     @Override

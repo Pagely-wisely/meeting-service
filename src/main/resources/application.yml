@@ -29,6 +29,7 @@ spring:
       properties:
         enable.idempotence: true
         retries: 3
+        linger.ms: 0
         request.timeout.ms: 5000
         delivery.timeout.ms: 20000
         spring.json.add.type.headers: false

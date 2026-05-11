@@ -47,6 +47,14 @@ public class OutboxEvent {
     @Column(name = "published_at")
     private LocalDateTime publishedAt;
 
+    // 현재 발행 처리 중인지 여부
+    @Column(name = "publishing", nullable = false)
+    private boolean publishing;
+
+    // 발행 처리 시작 시각
+    @Column(name = "publishing_started_at")
+    private LocalDateTime publishingStartedAt;
+
     // 발행 실패 횟수
     @Column(name = "failure_count", nullable = false)
     private int failureCount;
@@ -75,8 +83,6 @@ public class OutboxEvent {
             String topic,
             String payload
     ) {
-        validate(id, aggregateType, aggregateId, eventType, topic, payload);
-
         OutboxEvent event = new OutboxEvent();
         event.id = id;
         event.aggregateType = aggregateType;
@@ -85,15 +91,23 @@ public class OutboxEvent {
         event.topic = topic;
         event.payload = payload;
         event.published = false;
+        event.publishing = false;
         event.failureCount = 0;
         event.createdAt = LocalDateTime.now();
         return event;
+    }
+
+    // 발행 처리 중으로 변경
+    public void markPublishing() {
+        this.publishing = true;
+        this.publishingStartedAt = LocalDateTime.now();
     }
 
     // 발행 성공 처리
     public void markPublished() {
         this.published = true;
         this.publishedAt = LocalDateTime.now();
+        this.publishing = false;
     }
 
     // 발행 실패 기록
@@ -101,34 +115,7 @@ public class OutboxEvent {
         this.failureCount++;
         this.lastFailureAt = LocalDateTime.now();
         this.lastFailureMessage = truncate(message);
-    }
-
-    private static void validate(
-            UUID id,
-            String aggregateType,
-            UUID aggregateId,
-            String eventType,
-            String topic,
-            String payload
-    ) {
-        if (id == null) {
-            throw new IllegalArgumentException("id는 필수입니다.");
-        }
-        if (aggregateType == null || aggregateType.isBlank()) {
-            throw new IllegalArgumentException("aggregateType은 필수입니다.");
-        }
-        if (aggregateId == null) {
-            throw new IllegalArgumentException("aggregateId는 필수입니다.");
-        }
-        if (eventType == null || eventType.isBlank()) {
-            throw new IllegalArgumentException("eventType은 필수입니다.");
-        }
-        if (topic == null || topic.isBlank()) {
-            throw new IllegalArgumentException("topic은 필수입니다.");
-        }
-        if (payload == null || payload.isBlank()) {
-            throw new IllegalArgumentException("payload는 필수입니다.");
-        }
+        this.publishing = false;
     }
 
     private String truncate(String message) {
