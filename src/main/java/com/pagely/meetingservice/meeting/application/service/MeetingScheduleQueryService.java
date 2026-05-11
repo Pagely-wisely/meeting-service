@@ -51,7 +51,8 @@ public class MeetingScheduleQueryService {
 
     // 모임 존재 여부 검증
     private void validateMeetingExists(UUID meetingId) {
-        meetingRepository.findById(meetingId)
-                .orElseThrow(() -> new BusinessException(MeetingErrorCode.MEETING_NOT_FOUND));
+        if (!meetingRepository.existsById(meetingId)) {
+            throw new BusinessException(MeetingErrorCode.MEETING_NOT_FOUND);
+        }
     }
 }
