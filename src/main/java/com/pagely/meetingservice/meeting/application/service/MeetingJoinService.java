@@ -11,8 +11,8 @@ import com.pagely.meetingservice.meeting.domain.model.MeetingJoinStatus;
 import com.pagely.meetingservice.meeting.domain.model.MeetingMember;
 import com.pagely.meetingservice.meeting.domain.model.MeetingMemberRole;
 import com.pagely.meetingservice.meeting.domain.model.MeetingMemberStatus;
-import com.pagely.meetingservice.meeting.domain.model.MeetingStatus;
 import com.pagely.meetingservice.meeting.domain.model.RecruitStatus;
+import com.pagely.meetingservice.meeting.domain.policy.MeetingJoinPolicy;
 import com.pagely.meetingservice.meeting.domain.repository.MeetingJoinRepository;
 import com.pagely.meetingservice.meeting.domain.repository.MeetingMemberRepository;
 import com.pagely.meetingservice.meeting.domain.repository.MeetingRepository;
@@ -59,9 +59,7 @@ public class MeetingJoinService {
         syncRecruitClosedPeriod(meeting);
 
         // 모임장만 가입 신청 목록을 조회할 수 있음
-        if (!meeting.getHostId().equals(requesterHostId)) {
-            throw new BusinessException(MeetingJoinErrorCode.ONLY_HOST_CAN_VIEW_JOIN_LIST);
-        }
+        MeetingJoinPolicy.validateHost(meeting, requesterHostId);
 
         // 가입 상태 조건이 있으면 상태별 조회, 없으면 전체 조회
         Page<MeetingJoin> joins = joinStatus != null
@@ -80,11 +78,23 @@ public class MeetingJoinService {
 
         syncRecruitClosedPeriod(meeting);
 
-        validateMeetingChangeableStatus(meeting);
-        validateRecruitStatusForApply(meeting.getRecruitStatus());
-        validateCapacityForApply(command.meetingId(), meeting);
-        validateJoinReapplyPolicy(command.meetingId(), command.recruitUserId());
-        validateBlockedMemberStatus(command.meetingId(), command.recruitUserId());
+        MeetingJoinPolicy.validateMeetingAllowsJoin(meeting);
+        MeetingJoinPolicy.validateRecruitOpenForApply(meeting.getRecruitStatus());
+
+        long activeForApply = meetingMemberRepository.countByMeetingIdAndStatus(
+                command.meetingId(), MeetingMemberStatus.ACTIVE);
+
+        MeetingJoinPolicy.validateCapacityNotFullForApply(activeForApply, meeting.getRecruitMax());
+        MeetingJoin existingJoin = meetingJoinRepository
+                .findByMeetingIdAndRecruitUserId(command.meetingId(), command.recruitUserId())
+                .orElse(null);
+
+        MeetingJoinPolicy.validateReapplyPolicy(existingJoin);
+        MeetingMember existingMember = meetingMemberRepository
+                .findByMeetingIdAndUserId(command.meetingId(), command.recruitUserId())
+                .orElse(null);
+
+        MeetingJoinPolicy.validateMemberAllowsApply(existingMember); // 강퇴 등 차단
 
         UUID joinId = UUID.randomUUID();
         LocalDateTime now = LocalDateTime.now();
@@ -103,29 +113,19 @@ public class MeetingJoinService {
 
         syncRecruitClosedPeriod(meeting);
 
-        validateMeetingChangeableStatus(meeting);
-
-        if (!meeting.getHostId().equals(hostId)) { // 모임장 검증
-            throw new BusinessException(MeetingJoinErrorCode.ONLY_HOST_CAN_APPROVE_JOIN);
-        }
+        MeetingJoinPolicy.validateMeetingAllowsJoin(meeting);
+        MeetingJoinPolicy.validateHostForApprove(meeting, hostId);
 
         MeetingJoin join = meetingJoinRepository.findById(joinId)
                 .orElseThrow(() -> new BusinessException(MeetingJoinErrorCode.MEETING_JOIN_NOT_FOUND));
 
-        if (!join.getMeetingId().equals(meetingId)) {
-            throw new BusinessException(MeetingJoinErrorCode.JOIN_NOT_FOR_MEETING);
-        }
-
-        if (meetingMemberRepository.existsByMeetingIdAndUserId(meetingId,
-                join.getRecruitUserId())) { // 이미 모임에 참여중인 사용자 검증
-            throw new BusinessException(MeetingJoinErrorCode.ALREADY_MEETING_MEMBER);
-        }
+        MeetingJoinPolicy.validateJoinForMeeting(join, meetingId);
+        boolean alreadyMember = meetingMemberRepository.existsByMeetingIdAndUserId(meetingId, join.getRecruitUserId());
+        MeetingJoinPolicy.validateNotAlreadyMember(alreadyMember);
 
         long activeCount = meetingMemberRepository.countByMeetingIdAndStatus(meetingId, MeetingMemberStatus.ACTIVE);
 
-        if (activeCount >= meeting.getRecruitMax()) { // 모임 정원 검증
-            throw new BusinessException(MeetingJoinErrorCode.MEETING_RECRUIT_FULL);
-        }
+        MeetingJoinPolicy.validateCapacityForApprove(activeCount, meeting.getRecruitMax());
 
         join.approve(hostId);
 
@@ -148,63 +148,9 @@ public class MeetingJoinService {
         syncRecruitStatusAfterApprove(meeting, hostId);
 
         meetingRepository.save(meeting);
-        
+
         return MeetingJoinResult.from(savedJoin);
 
-    }
-
-    private void validateMeetingChangeableStatus(Meeting meeting) { // 모임 변경 가능 상태 검증
-        if (meeting.getMeetingStatus() != MeetingStatus.UPCOMING
-                && meeting.getMeetingStatus() != MeetingStatus.IN_PROGRESS) {
-            throw new BusinessException(MeetingErrorCode.INVALID_MEETING_STATUS);
-        }
-    }
-
-    private void validateRecruitStatusForApply(RecruitStatus recruitStatus) { // 가입 신청 가능 모집 상태 검증
-        if (recruitStatus == RecruitStatus.CLOSED) {
-            throw new BusinessException(MeetingJoinErrorCode.NOT_RECRUITING_MEETING);
-        }
-        if (recruitStatus == RecruitStatus.FULL) {
-            throw new BusinessException(MeetingJoinErrorCode.MEETING_RECRUIT_FULL);
-        }
-        if (recruitStatus != RecruitStatus.RECRUITING) {
-            throw new BusinessException(MeetingJoinErrorCode.NOT_RECRUITING_MEETING);
-        }
-    }
-
-    private void validateJoinReapplyPolicy(UUID meetingId, UUID recruitUserId) { // 기존 신청 이력을 기준으로 재신청 검증
-        MeetingJoin existingJoin = meetingJoinRepository.findByMeetingIdAndRecruitUserId(meetingId, recruitUserId)
-                .orElse(null);
-        if (existingJoin == null) {
-            return;
-        }
-        if (existingJoin.getJoinStatus() == MeetingJoinStatus.REJECTED) {
-            throw new BusinessException(MeetingJoinErrorCode.REJECTED_USER_CANNOT_REAPPLY);
-        }
-        if (existingJoin.getJoinStatus() == MeetingJoinStatus.PENDING
-                || existingJoin.getJoinStatus() == MeetingJoinStatus.APPROVED) {
-            throw new BusinessException(MeetingJoinErrorCode.MEETING_JOIN_ALREADY_EXISTS);
-        }
-    }
-
-    private void validateBlockedMemberStatus(UUID meetingId, UUID recruitUserId) { // 멤버 상태 기반 신청 차단
-        MeetingMember existingMember = meetingMemberRepository.findByMeetingIdAndUserId(meetingId, recruitUserId)
-                .orElse(null);
-        if (existingMember == null) {
-            return;
-        }
-        if (existingMember.getStatus() == MeetingMemberStatus.REMOVED
-                || existingMember.getStatus() == MeetingMemberStatus.EXPELLED) {
-            throw new BusinessException(MeetingJoinErrorCode.REJECTED_USER_CANNOT_REAPPLY);
-        }
-    }
-
-    private void validateCapacityForApply(UUID meetingId, Meeting meeting){
-        long activeCount = meetingMemberRepository.countByMeetingIdAndStatus(meetingId, MeetingMemberStatus.ACTIVE);
-
-        if(activeCount >= meeting.getRecruitMax()){
-            throw new BusinessException(MeetingJoinErrorCode.MEETING_RECRUIT_FULL);
-        }
     }
 
     private void syncRecruitStatusAfterApprove(Meeting meeting, UUID updaterId) { // 승인 이후 모집 상태 동기화

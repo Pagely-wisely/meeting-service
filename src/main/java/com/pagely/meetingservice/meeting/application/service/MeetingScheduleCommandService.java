@@ -18,6 +18,7 @@ import com.pagely.meetingservice.meeting.domain.model.MeetingAttendance;
 import com.pagely.meetingservice.meeting.domain.model.MeetingMember;
 import com.pagely.meetingservice.meeting.domain.model.MeetingSchedule;
 import com.pagely.meetingservice.meeting.domain.model.MeetingScheduleStatus;
+import com.pagely.meetingservice.meeting.domain.policy.MeetingSchedulePolicy;
 import com.pagely.meetingservice.meeting.domain.repository.MeetingAttendanceRepository;
 import com.pagely.meetingservice.meeting.domain.repository.MeetingMemberRepository;
 import com.pagely.meetingservice.meeting.domain.repository.MeetingRepository;
@@ -50,11 +51,7 @@ public class MeetingScheduleCommandService {
         Meeting meeting = meetingRepository.findByIdForUpdate(command.meetingId())
                 .orElseThrow(() -> new BusinessException(MeetingErrorCode.MEETING_NOT_FOUND));
 
-        if (meeting.isOneTime()) {
-            throw new BusinessException(
-                    MeetingScheduleErrorCode.ONE_TIME_MEETING_CANNOT_CREATE_ADDITIONAL_SCHEDULE
-            );
-        }
+        MeetingSchedulePolicy.validateAdditionalScheduleAllowed(meeting);
 
         MeetingMember requester = meetingMemberRepository.findByMeetingIdAndUserId(
                         command.meetingId(),
@@ -62,9 +59,7 @@ public class MeetingScheduleCommandService {
                 )
                 .orElseThrow(() -> new BusinessException(MeetingMemberErrorCode.ONLY_MEETING_MEMBER_ALLOWED));
 
-        if (!requester.isActive() || !requester.isHost()) {
-            throw new BusinessException(MeetingScheduleErrorCode.ONLY_HOST_CAN_CREATE_SCHEDULE);
-        }
+        MeetingSchedulePolicy.validateHostCreateSchedule(requester);
 
         bookProvider.validateBook(command.bookId());
 
@@ -103,14 +98,9 @@ public class MeetingScheduleCommandService {
         MeetingSchedule schedule = meetingScheduleRepository.findByIdForUpdate(command.scheduleId())
                 .orElseThrow(() -> new BusinessException(MeetingScheduleErrorCode.MEETING_SCHEDULE_NOT_FOUND));
 
-        if (!schedule.getMeetingId().equals(command.meetingId())) {
-            throw new BusinessException(MeetingScheduleErrorCode.SCHEDULE_NOT_FOR_MEETING);
-        }
+        MeetingSchedulePolicy.validateScheduleBelongsToMeeting(schedule, command.meetingId());
 
-        if (schedule.getStatus() == MeetingScheduleStatus.ONGOING
-                && command.status() == MeetingScheduleStatus.ONGOING) {
-            throw new BusinessException(MeetingScheduleErrorCode.INVALID_SCHEDULE_STATUS_CHANGE);
-        }
+        MeetingSchedulePolicy.validateAlreadyOngoing(schedule, command.status());
 
         MeetingMember updater = meetingMemberRepository.findByMeetingIdAndUserId(
                         command.meetingId(),
@@ -118,9 +108,7 @@ public class MeetingScheduleCommandService {
                 )
                 .orElseThrow(() -> new BusinessException(MeetingMemberErrorCode.ONLY_MEETING_MEMBER_ALLOWED));
 
-        if (!updater.isActive() || !updater.isHost()) {
-            throw new BusinessException(MeetingScheduleErrorCode.ONLY_HOST_CAN_CHANGE_SCHEDULE_STATUS);
-        }
+        MeetingSchedulePolicy.validateHostChangesScheduleStatus(updater);
 
         List<MeetingAttendance> autoAbsentAttendances = List.of();
 
