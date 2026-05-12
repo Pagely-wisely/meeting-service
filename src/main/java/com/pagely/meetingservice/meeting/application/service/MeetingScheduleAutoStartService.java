@@ -8,6 +8,8 @@ import com.pagely.meetingservice.meeting.domain.model.Meeting;
 import com.pagely.meetingservice.meeting.domain.model.MeetingSchedule;
 import com.pagely.meetingservice.meeting.domain.repository.MeetingRepository;
 import com.pagely.meetingservice.meeting.domain.repository.MeetingScheduleRepository;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
 import java.time.LocalDateTime;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -26,6 +28,7 @@ public class MeetingScheduleAutoStartService {
     private final MeetingRepository meetingRepository;
     private final EventPublisher eventPublisher;
     private final MissingReportPenaltyService missingReportPenaltyService;
+    private final MeterRegistry meterRegistry;
 
     // 단일 일정을 자동 시작한다.
     @Transactional
@@ -38,11 +41,21 @@ public class MeetingScheduleAutoStartService {
 
         // 삭제되었거나 존재하지 않는 일정이면 무시한다.
         if (schedule == null) {
+            // 자동 시작 대상 일정이 존재하지 않는 경우를 기록한다.
+            Counter.builder("meeting.schedule.auto.start.skip")
+                    .tag("reason", "not_found")
+                    .register(meterRegistry)
+                    .increment();
             return;
         }
 
         // 이미 시작/종료/취소되었거나 아직 시작 시간이 아니면 무시한다.
         if (!schedule.isStartTimeReached(now)) {
+            // 아직 시작 시간이 되지 않아 스킵된 경우를 기록한다.
+            Counter.builder("meeting.schedule.auto.start.skip")
+                    .tag("reason", "not_reached")
+                    .register(meterRegistry)
+                    .increment();
             return;
         }
 
@@ -63,5 +76,8 @@ public class MeetingScheduleAutoStartService {
 
         // 일정 상태 변경 이벤트를 발행한다.
         eventPublisher.publish(MeetingScheduleStatusChangedEvent.of(schedule));
+
+        // 일정 자동 시작 성공 횟수를 기록한다.
+        meterRegistry.counter("meeting.schedule.auto.start.success").increment();
     }
 }

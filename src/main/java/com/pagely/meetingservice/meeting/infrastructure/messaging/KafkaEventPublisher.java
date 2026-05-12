@@ -6,6 +6,8 @@ import com.pagely.meetingservice.meeting.application.port.EventPublisher;
 import com.pagely.meetingservice.meeting.domain.event.BaseEvent;
 import com.pagely.meetingservice.meeting.infrastructure.messaging.outbox.OutboxEvent;
 import com.pagely.meetingservice.meeting.infrastructure.messaging.outbox.OutboxRepository;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -26,6 +28,7 @@ public class KafkaEventPublisher implements EventPublisher {
 
     private final OutboxRepository outboxRepository;
     private final ObjectMapper objectMapper;
+    private final MeterRegistry meterRegistry;
 
     @Override
     public void publish(BaseEvent event) {
@@ -60,6 +63,13 @@ public class KafkaEventPublisher implements EventPublisher {
 
             outboxRepository.save(outboxEvent);
 
+            // Outbox 저장 성공 횟수를 eventType/topic 기준으로 기록한다.
+            Counter.builder("outbox.save.success")
+                    .tag("eventType", event.getEventType())
+                    .tag("topic", topic)
+                    .register(meterRegistry)
+                    .increment();
+
             log.info(
                     "Outbox 저장 완료. eventType={}, domainId={}, topic={}",
                     event.getEventType(),
@@ -67,6 +77,13 @@ public class KafkaEventPublisher implements EventPublisher {
                     topic
             );
         } catch (JsonProcessingException e) {
+            // Outbox 직렬화 실패 횟수를 eventType 기준으로 기록한다.
+            Counter.builder("outbox.save.failure")
+                    .tag("eventType", event.getEventType())
+                    .tag("reason", "serialization")
+                    .register(meterRegistry)
+                    .increment();
+
             log.error("Outbox 이벤트 직렬화 실패. eventType={}", event.getEventType(), e);
             throw new IllegalStateException("Outbox 이벤트 직렬화 실패: " + event.getEventType(), e);
         }

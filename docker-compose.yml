@@ -1,0 +1,25 @@
+services:
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: pagely-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+    extra_hosts:
+      # Docker 컨테이너에서 로컬 PC의 meeting-service에 접근하기 위한 설정
+      - "host.docker.internal:host-gateway"
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: pagely-grafana
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
+
+  zipkin:
+    image: openzipkin/zipkin:latest
+    container_name: pagely-zipkin
+    ports:
+      - "9411:9411"
