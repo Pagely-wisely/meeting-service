@@ -6,7 +6,7 @@ spring:
     name: meetingservice
 
   config:
-    import: optional:classpath:/.env[.properties]
+    import: optional:file:./.env[.properties]
 
   datasource:
     url: jdbc:postgresql://${DB_HOST}:${DB_PORT}/${MEETING_DB_NAME}
