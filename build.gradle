@@ -45,6 +45,7 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
     // Prometheus가 수집할 수 있는 metric endpoint 제공
     implementation 'io.micrometer:micrometer-registry-prometheus'
+    implementation 'net.datafaker:datafaker:2.2.2'
     runtimeOnly 'org.postgresql:postgresql'
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
