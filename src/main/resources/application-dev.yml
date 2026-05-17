@@ -1,0 +1,17 @@
+eureka:
+  client:
+    enabled: false
+    register-with-eureka: false
+    fetch-registry: false
+
+book-service:
+  url: ${BOOK_SERVICE_URL:http://localhost:19051}
+
+logging:
+  level:
+    com.pagely.meetingservice: debug
+
+management:
+  endpoint:
+    health:
+      show-details: always

@@ -39,3 +39,7 @@ out/
 
 src/main/resources/.env
 /.env
+.env.dev
+.env.prod
+.env.prod.local
+.env.prod.example

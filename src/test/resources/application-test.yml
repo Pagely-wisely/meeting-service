@@ -7,3 +7,6 @@ spring:
 eureka:
   client:
     enabled: false
+
+book-service:
+  url: http://localhost:19051

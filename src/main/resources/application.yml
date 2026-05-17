@@ -73,11 +73,6 @@ management:
         # 외부에서 확인할 actuator endpoint만 노출한다.
         include: health,info,metrics,prometheus
 
-  endpoint:
-    health:
-      # 로컬/개발 환경에서 health 상세 정보를 확인한다.
-      show-details: always
-
   metrics:
     tags:
       # Prometheus/Grafana에서 서비스명을 구분하기 위한 공통 태그
@@ -88,18 +83,6 @@ logging:
     org.flywaydb: info
     org.springframework.kafka: info
     org.apache.kafka.clients.producer: info
-    com.pagely.meetingservice: debug
-
-eureka:
-  client:
-    enabled: true
-    register-with-eureka: true
-    fetch-registry: true
-    service-url:
-      defaultZone: ${EUREKA_SERVER_URL:http://localhost:8000/eureka/}
-
-book-service:
-  url: http://localhost:19051
 
 cloud:
   openfeign:
