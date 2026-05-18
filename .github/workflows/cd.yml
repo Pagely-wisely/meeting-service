@@ -58,7 +58,7 @@ jobs:
             BOOK_SERVICE_URL=${{ secrets.BOOK_SERVICE_URL }}
             EOF
 
-            docker pull ${{ secrets.DOCKER_USERNAME }}/meeting:latest
+            docker pull ${{ secrets.DOCKER_USERNAME }}/meeting-service:latest
 
             docker stop meeting || true
             docker rm meeting || true
@@ -72,4 +72,4 @@ jobs:
               --env-file .env \
               --add-host=host.docker.internal:host-gateway \
               --restart always \
-              ${{ secrets.DOCKER_USERNAME }}/meeting:latest
+              ${{ secrets.DOCKER_USERNAME }}/meeting-service:latest
