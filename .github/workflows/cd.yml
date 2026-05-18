@@ -43,8 +43,8 @@ jobs:
           username: ubuntu
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            mkdir -p ~/app/meeting-service
-            cd ~/app/meeting-service
+            mkdir -p ~/app/meeting
+            cd ~/app/meeting
 
             cat << EOF > .env
             DB_HOST=${{ secrets.DB_HOST }}
@@ -58,18 +58,18 @@ jobs:
             BOOK_SERVICE_URL=${{ secrets.BOOK_SERVICE_URL }}
             EOF
 
-            docker pull ${{ secrets.DOCKER_USERNAME }}/meeting-service:latest
+            docker pull ${{ secrets.DOCKER_USERNAME }}/meeting:latest
 
-            docker stop meeting-service || true
-            docker rm meeting-service || true
+            docker stop meeting || true
+            docker rm meeting || true
 
             docker image prune -f
 
             docker run -d \
-              --name meeting-service \
+              --name meeting \
               -p 19011:19011 \
               -e SPRING_PROFILES_ACTIVE=prod \
               --env-file .env \
               --add-host=host.docker.internal:host-gateway \
               --restart always \
-              ${{ secrets.DOCKER_USERNAME }}/meeting-service:latest
+              ${{ secrets.DOCKER_USERNAME }}/meeting:latest

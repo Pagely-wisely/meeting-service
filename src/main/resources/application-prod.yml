@@ -1,6 +1,41 @@
+server:
+  port: 19011
+
 spring:
   config:
     import: optional:classpath:/.env[.properties]
+
+  application:
+    name: meetingservice
+
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:host.docker.internal}:${DB_PORT}/${MEETING_DB_NAME}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        format_sql: true
+    show-sql: false
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+
+  kafka:
+    bootstrap-servers: ${KAFKA_EXTERNAL_HOST:host.docker.internal}:${KAFKA_EXTERNAL_PORT}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      properties:
+        spring.json.add.type.headers: false
+    consumer:
+      bootstrap-servers: ${KAFKA_EXTERNAL_HOST:host.docker.internal}:${KAFKA_EXTERNAL_PORT}
 
 eureka:
   instance:
@@ -13,3 +48,18 @@ eureka:
 
 book-service:
   url: ${BOOK_SERVICE_URL:http://host.docker.internal:19051}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info, prometheus, metrics
+  metrics:
+    distribution:
+      percentiles-histogram:
+        http.server.requests: true
+
+logging:
+  level:
+    org.flywaydb: info
+    com.pagely.meetingservice: info
