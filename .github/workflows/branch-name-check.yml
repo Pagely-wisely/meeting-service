@@ -7,6 +7,7 @@ on:
       - dev
       - init
       - release
+      - prod
 
 jobs:
   check-branch-name:
