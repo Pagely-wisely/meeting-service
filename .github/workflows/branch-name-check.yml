@@ -2,15 +2,16 @@ name: Branch Naming Check
 
 on:
   push:
-    branches-ignore:
-      - main
-      - dev
-      - init
-      - release
-      - prod
 
 jobs:
   check-branch-name:
+    if: |
+      github.ref_name != 'main' &&
+      github.ref_name != 'dev' &&
+      github.ref_name != 'init' &&
+      github.ref_name != 'release' &&
+      github.ref_name != 'prod'
+
     runs-on: ubuntu-latest
 
     steps:

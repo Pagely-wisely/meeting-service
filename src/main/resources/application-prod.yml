@@ -1,8 +1,15 @@
+spring:
+  config:
+    import: optional:classpath:/.env[.properties]
+
 eureka:
   instance:
     prefer-ip-address: true
   client:
     register-with-eureka: true
     fetch-registry: true
-    serviceUrl:
-      defaultZone: ${EUREKA_SERVER_URL:http://localhost:8000/eureka/}
+    service-url:
+      defaultZone: ${EUREKA_SERVER_URL:http://host.docker.internal:8000/eureka/}
+
+book-service:
+  url: ${BOOK_SERVICE_URL:http://host.docker.internal:19051}

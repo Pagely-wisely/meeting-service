@@ -14,7 +14,7 @@ jobs:
   branch-naming-check:
     name: Branch Naming Check
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' && github.ref_name != 'main' && github.ref_name != 'dev' && github.ref_name != 'init'
+    if: github.event_name == 'push' && github.ref_name != 'main' && github.ref_name != 'dev' && github.ref_name != 'init' && github.ref_name != 'prod' && github.ref_name != 'release'
 
     steps:
       - name: Check branch name format
@@ -56,6 +56,8 @@ jobs:
       MEETING_DB_NAME: pagely_meeting
       DB_USERNAME: postgre
       DB_PASSWORD: postgre
+      BOOK_SERVICE_URL: http://localhost:19051
+      EUREKA_SERVER_URL: http://localhost:8000/eureka/
       GPR_USER: ${{ secrets.GPR_USER }}
       GPR_KEY: ${{ secrets.GPR_KEY }}
 
