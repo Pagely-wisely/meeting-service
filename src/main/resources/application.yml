@@ -5,22 +5,11 @@ spring:
   application:
     name: meetingservice
 
-  config:
-    import: optional:file:./.env[.properties]
-
-  datasource:
-    url: jdbc:postgresql://${DB_HOST}:${DB_PORT}/${MEETING_DB_NAME}
-    username: ${DB_USERNAME}
-    password: ${DB_PASSWORD}
-    driver-class-name: org.postgresql.Driver
-
   jackson:
     serialization:
       write-dates-as-timestamps: false
 
   kafka:
-    bootstrap-servers: ${KAFKA_EXTERNAL_HOST}:${KAFKA_EXTERNAL_PORT}
-
     producer:
       client-id: meetingservice-producer
       acks: all
@@ -70,36 +59,15 @@ management:
   endpoints:
     web:
       exposure:
-        # 외부에서 확인할 actuator endpoint만 노출한다.
         include: health,info,metrics,prometheus
 
   endpoint:
     health:
-      # 로컬/개발 환경에서 health 상세 정보를 확인한다.
       show-details: always
 
   metrics:
     tags:
-      # Prometheus/Grafana에서 서비스명을 구분하기 위한 공통 태그
       application: ${spring.application.name}
-
-logging:
-  level:
-    org.flywaydb: info
-    org.springframework.kafka: info
-    org.apache.kafka.clients.producer: info
-    com.pagely.meetingservice: debug
-
-eureka:
-  client:
-    enabled: true
-    register-with-eureka: true
-    fetch-registry: true
-    service-url:
-      defaultZone: ${EUREKA_SERVER_URL:http://localhost:8000/eureka/}
-
-book-service:
-  url: http://localhost:19051
 
 cloud:
   openfeign:
